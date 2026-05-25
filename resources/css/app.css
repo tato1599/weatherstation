@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../../vendor/robsontenorio/mary/src/View/Components/**/*.php';
+
+@plugin "daisyui" {
+    themes: light --default, dark --prefersdark;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --color-background: var(--meteo-background);
+    --color-surface: var(--meteo-surface);
+    --color-surface-container-lowest: var(--meteo-surface-container-lowest);
+    --color-surface-container-low: var(--meteo-surface-container-low);
+    --color-surface-container: var(--meteo-surface-container);
+    --color-surface-container-high: var(--meteo-surface-container-high);
+    --color-surface-container-highest: var(--meteo-surface-container-highest);
+    --color-surface-variant: var(--meteo-surface-variant);
+    --color-outline-variant: var(--meteo-outline-variant);
+    --color-outline: var(--meteo-outline);
+    --color-on-surface: var(--meteo-on-surface);
+    --color-on-background: var(--meteo-on-background);
+    --color-on-surface-variant: var(--meteo-on-surface-variant);
+    --color-primary: var(--meteo-primary);
+    --color-on-primary: var(--meteo-on-primary);
+    --color-secondary: var(--meteo-secondary);
+    --color-secondary-container: var(--meteo-secondary-container);
+    --color-on-secondary-container: var(--meteo-on-secondary-container);
+    --color-tertiary: var(--meteo-tertiary);
+    --color-tertiary-fixed-dim: var(--meteo-tertiary-fixed-dim);
+    --color-tertiary-fixed: var(--meteo-tertiary-fixed);
+    --color-error: var(--meteo-error);
+    --color-error-container: var(--meteo-error-container);
+    --color-on-error-container: var(--meteo-on-error-container);
+
+    --font-body-md: 'Inter', ui-sans-serif, system-ui;
+    --font-label-md: 'Geist', ui-sans-serif, system-ui;
+    --font-data-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+:root,
+[data-theme="light"] {
+    --meteo-background: #f3f7fc;
+    --meteo-surface: #f3f7fc;
+    --meteo-surface-container-lowest: #ffffff;
+    --meteo-surface-container-low: #eef3f9;
+    --meteo-surface-container: #e5edf6;
+    --meteo-surface-container-high: #dae5f1;
+    --meteo-surface-container-highest: #cedbe9;
+    --meteo-surface-variant: #d9e3ef;
+    --meteo-outline-variant: #b8c4d1;
+    --meteo-outline: #8a99aa;
+    --meteo-on-surface: #142235;
+    --meteo-on-background: #142235;
+    --meteo-on-surface-variant: #44566a;
+    --meteo-primary: #21324a;
+    --meteo-on-primary: #ffffff;
+    --meteo-secondary: #2d5ea8;
+    --meteo-secondary-container: #d6e4ff;
+    --meteo-on-secondary-container: #183a70;
+    --meteo-tertiary: #0088a3;
+    --meteo-tertiary-fixed-dim: #31bfd8;
+    --meteo-tertiary-fixed: #a4e9f5;
+    --meteo-error: #b3261e;
+    --meteo-error-container: #f9dedc;
+    --meteo-on-error-container: #5f1110;
+
+    --color-primary: #21324a;
+    --color-primary-content: #ffffff;
+    --color-secondary: #2d5ea8;
+    --color-secondary-content: #ffffff;
+    --color-accent: #0088a3;
+    --color-accent-content: #ffffff;
+    --color-neutral: #1f2b3a;
+    --color-neutral-content: #f3f7fc;
+    --color-base-100: #ffffff;
+    --color-base-200: #eef3f9;
+    --color-base-300: #e5edf6;
+    --color-base-content: #142235;
+}
+
+[data-theme="dark"] {
+    --meteo-background: #051424;
+    --meteo-surface: #051424;
+    --meteo-surface-container-lowest: #010f1f;
+    --meteo-surface-container-low: #0d1c2d;
+    --meteo-surface-container: #122131;
+    --meteo-surface-container-high: #1c2b3c;
+    --meteo-surface-container-highest: #273647;
+    --meteo-surface-variant: #273647;
+    --meteo-outline-variant: #45464d;
+    --meteo-outline: #909097;
+    --meteo-on-surface: #d4e4fa;
+    --meteo-on-background: #d4e4fa;
+    --meteo-on-surface-variant: #c6c6cd;
+    --meteo-primary: #bec6e0;
+    --meteo-on-primary: #283044;
+    --meteo-secondary: #adc6ff;
+    --meteo-secondary-container: #0566d9;
+    --meteo-on-secondary-container: #e6ecff;
+    --meteo-tertiary: #2fd9f4;
+    --meteo-tertiary-fixed-dim: #2fd9f4;
+    --meteo-tertiary-fixed: #a2eeff;
+    --meteo-error: #ffb4ab;
+    --meteo-error-container: #93000a;
+    --meteo-on-error-container: #ffdad6;
+
+    --color-primary: #adc6ff;
+    --color-primary-content: #0f1f33;
+    --color-secondary: #7db2ff;
+    --color-secondary-content: #08172c;
+    --color-accent: #2fd9f4;
+    --color-accent-content: #05212b;
+    --color-neutral: #0d1c2d;
+    --color-neutral-content: #d4e4fa;
+    --color-base-100: #051424;
+    --color-base-200: #0d1c2d;
+    --color-base-300: #122131;
+    --color-base-content: #d4e4fa;
+}
+
+.material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+}
+
+@layer components {
+    .meteo-panel {
+        @apply bg-surface-container border border-outline-variant/40 rounded-2xl shadow-md;
+    }
+
+    .meteo-panel-soft {
+        @apply bg-surface-container-low border border-outline-variant/40 rounded-xl shadow-md;
+    }
+
+    .meteo-title {
+        @apply text-primary font-bold tracking-tight;
+    }
+
+    .meteo-label {
+        @apply block text-sm font-semibold text-on-surface-variant mb-2;
+    }
+
+    .meteo-input {
+        @apply w-full rounded-xl border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-white outline-none placeholder:text-white/70;
+    }
+
+    .meteo-input,
+    .meteo-input::placeholder,
+    .meteo-input option {
+        color: #ffffff !important;
+    }
+
+    input.meteo-input,
+    textarea.meteo-input,
+    select.meteo-input {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    .meteo-input:-webkit-autofill,
+    .meteo-input:-webkit-autofill:hover,
+    .meteo-input:-webkit-autofill:focus,
+    .meteo-input:-webkit-autofill:active {
+        -webkit-text-fill-color: #ffffff !important;
+        transition: background-color 9999s ease-in-out 0s;
+    }
+
+    .meteo-input:focus {
+        @apply border-secondary ring-2 ring-secondary/30;
+    }
+
+    .meteo-btn-primary {
+        @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold transition bg-secondary text-white hover:opacity-90;
+        color: #ffffff !important;
+    }
+
+    .meteo-icon-btn {
+        @apply inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/50 bg-surface-container-low text-on-surface-variant transition hover:bg-surface-container-high hover:text-on-surface;
+    }
+
+    .meteo-badge {
+        @apply inline-flex items-center rounded-lg border border-outline-variant/50 bg-surface-container-high px-2 py-1 text-xs text-on-surface-variant;
+    }
+
+    .meteo-table {
+        @apply w-full text-sm;
+    }
+
+    .meteo-table th {
+        @apply text-left text-on-surface-variant font-semibold border-b border-outline-variant/50 pb-2;
+    }
+
+    .meteo-table td {
+        @apply border-b border-outline-variant/30 py-2 text-on-surface;
+    }
+
+    .meteo-alert-success {
+        @apply rounded-xl border border-emerald-400/40 bg-emerald-500/10 p-3 text-emerald-200;
+    }
+
+    .meteo-alert-warning {
+        @apply rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-amber-100;
+    }
+
+    .meteo-code {
+        @apply rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-3 text-xs text-on-surface-variant;
+    }
+
+    .meteo-divider {
+        @apply h-px w-full bg-outline-variant/35;
+    }
+}
