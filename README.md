@@ -210,6 +210,47 @@ Tipicamente veras algo como `/dev/tty.usbmodem14101`. Actualiza `WEATHER_SERIAL_
 | `/live` | Monitoreo en tiempo real directo del serial |
 | `/hardware` | Configuracion del puerto serial y listener |
 
+### Vistas y Funcionamiento en Detalle
+
+#### 1. Landing Pública (`/`)
+La **Landing Pública** es la puerta de entrada a la aplicación. Muestra de forma limpia, elegante y minimalista las lecturas meteorológicas actuales del sistema de un vistazo.
+- **Métricas Clave**: Visualización en tiempo real de la temperatura (DHT11 y BMP280), humedad relativa, presión atmosférica y altitud aproximada.
+- **Diseño Glassmorphic**: Desarrollada con DaisyUI y Tailwind CSS, ofrece una interfaz moderna que cautiva al usuario.
+- **Acceso Directo**: Ideal para colocar en pantallas informativas o tablets de monitoreo doméstico.
+
+![Landing Pública](public/images/landing.png)
+
+---
+
+#### 2. Panel Técnico / Monitor (`/monitor`)
+El **Panel Técnico** es la consola de administración de datos donde los ingenieros y entusiastas pueden analizar los históricos registrados en la base de datos PostgreSQL/SQLite.
+- **Indicadores de Estado**: Muestra de un vistazo el último registro capturado, su origen (API o Serial) y el tiempo transcurrido desde la última ingesta.
+- **Gráficas en Tiempo Real**: Gráficas dinámicas e interactivas que detallan el comportamiento histórico de las variables del ambiente.
+- **Historial Paginado**: Una tabla reactiva construida sobre Livewire que permite paginar las lecturas previas, auditar los metadatos JSON completos y ver marcas de tiempo exactas.
+
+![Panel Técnico](public/images/monitor.png)
+
+---
+
+#### 3. Consola Serial en Vivo (`/live`)
+La **Consola en Vivo** permite conectarse directamente al puerto serial del hardware (por ejemplo, el Arduino) sin guardar los datos en la base de datos de producción.
+- **Calibración y Diagnóstico**: Perfecta para realizar tareas de mantenimiento, verificar que las tramas JSON que envía el microcontrolador tengan el formato correcto, y auditar ruido en la línea.
+- **Terminal Web Interactiva**: Un stream dinámico de logs en vivo con formato de consola para una experiencia de depuración directa e inmediata.
+
+![Consola en Vivo](public/images/live.png)
+
+---
+
+#### 4. Panel de Configuración de Hardware (`/hardware`)
+El centro neurálgico de control físico de la estación meteorológica. Desde aquí se administra la comunicación de bajo nivel entre el servidor Laravel y el microcontrolador Arduino.
+- **Autodetectores de Puertos**: Muestra dinámicamente qué dispositivos de puerto serial USB/COM están conectados en el sistema (ideal para plataformas macOS y Linux).
+- **Gestión del Demonio Serial**: Botones interactivos para **Iniciar**, **Detener**, **Reiniciar** y **Liberar** puertos del daemon de Laravel (`weather:serial-listen`) que escucha continuamente al hardware.
+- **Configuración Dinámica**: Guarda la velocidad del puerto (Baud Rate) y el puerto asignado directamente en base de datos para no requerir modificar el `.env` constantemente.
+
+![Configuración de Hardware](public/images/hardware.png)
+
+---
+
 ### Ingesta por API REST
 
 Envia datos desde cualquier cliente HTTP o script:
