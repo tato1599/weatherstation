@@ -1,0 +1,604 @@
+\documentclass[12pt,a4paper]{report}
+
+% Codificación y fuentes
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% Idioma
+\usepackage[spanish,es-tabla]{babel}
+
+% Márgenes
+\usepackage[top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm]{geometry}
+
+% Matemáticas y símbolos
+\usepackage{amsmath,amsfonts,amssymb}
+
+% Gráficos
+\usepackage{graphicx}
+\usepackage{float}
+\graphicspath{{images/}}
+
+% Tablas
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+
+% Código fuente
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray},
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    backgroundcolor=\color{gray!10},
+    frame=single,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+    captionpos=b,
+    language=PHP,
+    morekeywords={function,class,public,private,protected,return,use,namespace,new,try,catch,throw,if,else,elseif,foreach,for,while,do,switch,case,default,break,continue,extends,implements,interface,trait,static,final,abstract,const,echo,print,require,include,require_once,include_once,trait,use,as,yield,await}
+}
+
+% Hipervínculos
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=green!50!black,
+    pdftitle={Meteo-Lab / Clima Visor: Estación Meteorológica con Arduino y Laravel},
+    pdfauthor={Autor del Proyecto},
+}
+
+% Bibliografía
+\usepackage[numbers,sort&compress]{natbib}
+
+% Otros
+\usepackage{enumitem}
+\usepackage{setspace}
+\onehalfspacing
+
+% Información del documento
+\title{\textbf{Meteo-Lab / Clima Visor}\\[0.5em]
+\Large Estación Meteorológica Digital con Arduino y Laravel}
+\author{Autor del Proyecto}
+\date{\today}
+
+\begin{document}
+
+% ============================================
+% PORTADA
+% ============================================
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\bfseries Meteo-Lab / Clima Visor}\\[1cm]
+    {\LARGE Estación Meteorológica Digital}\\[0.3cm]
+    {\LARGE basada en Arduino y Laravel}\\[2cm]
+    
+    % Espacio reservado para logo o imagen institucional
+    % \includegraphics[width=0.3\textwidth]{logo_institucion.png}\\[2cm]
+    
+    {\large\textbf{Documentación Técnica}}\\[1.5cm]
+    
+    \vfill
+    
+    {\large Autor del Proyecto}\\[0.5cm]
+    {\large \today}
+    
+\end{titlepage}
+
+% ============================================
+% RESUMEN
+% ============================================
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+
+El presente documento describe el diseño, desarrollo e implementación de \textit{Meteo-Lab}, también conocido como \textit{Clima Visor}: una estación meteorológica digital completa que integra hardware de bajo costo basado en Arduino con una aplicación web moderna desarrollada con el framework Laravel. El sistema captura datos de temperatura, humedad relativa, presión atmosférica y altitud aproximada mediante los sensores DHT11 y BMP280, los transmite a través del puerto serial USB y los almacena en una base de datos relacional PostgreSQL. La aplicación web proporciona un panel de monitoreo en tiempo real, historial paginado de lecturas, gráficas interactivas de tendencias y una consola de configuración de hardware, ofreciendo una solución integral para la observación meteorológica local.
+
+\textbf{Palabras clave:} Arduino, Laravel, estación meteorológica, DHT11, BMP280, puerto serial, API REST, Livewire, Tailwind CSS.
+
+% ============================================
+% ÍNDICE
+% ============================================
+\tableofcontents
+
+% ============================================
+% CAPÍTULO 1: INTRODUCCIÓN
+% ============================================
+\chapter{Introducción}
+\label{ch:introduccion}
+
+La monitorización de variables ambientales es una disciplina fundamental en campos como la agricultura de precisión, la meteorología amateur, la domótica y la investigación educativa. Tradicionalmente, las estaciones meteorológicas comerciales representan una inversión considerable y ofrecen limitada capacidad de personalización. Por ello, el desarrollo de estaciones meteorológicas basadas en hardware libre y software de código abierto ha ganado notable popularidad en los últimos años \cite{arduino2024}.
+
+\textit{Meteo-Lab} (o \textit{Clima Visor}) surge como una propuesta integral que combina la simplicidad y accesibilidad del ecosistema Arduino con la robustez y escalabilidad del framework Laravel \cite{laravel2024}. El objetivo principal es construir una plataforma capaz de adquirir datos de sensores en tiempo real, persistirlos de manera estructurada y presentarlos a través de una interfaz web moderna, interactiva y responsiva.
+
+\section{Motivación}
+\label{sec:motivacion}
+
+La motivación detrás de este proyecto radica en la necesidad de contar con una herramienta educativa y funcional que permita:
+\begin{itemize}[leftmargin=*]
+    \item Demostrar la integración entre sistemas embebidos y aplicaciones web modernas.
+    \item Proporcionar una base de datos histórica de condiciones climáticas locales.
+    \item Ofrecer una interfaz de usuario atractiva y de bajo consumo de recursos.
+    \item Facilitar la calibración y el diagnóstico de sensores mediante una consola serial en vivo.
+\end{itemize}
+
+\section{Alcance}
+\label{sec:alcance}
+
+El sistema abarca desde el firmware del microcontrolador hasta el despliegue de la aplicación web. Incluye la lectura de sensores, la transmisión de datos por puerto serial, la ingesta mediante API REST con autenticación por token, el almacenamiento en base de datos relacional y la visualización mediante tablas, tarjetas de métricas y gráficas de líneas.
+
+% ============================================
+% CAPÍTULO 2: OBJETIVOS
+% ============================================
+\chapter{Objetivos}
+\label{ch:objetivos}
+
+\section{Objetivo General}
+\label{sec:objetivo-general}
+
+Diseñar e implementar una estación meteorológica digital que integre un microcontrolador Arduino con sensores de temperatura, humedad y presión, y una aplicación web desarrollada en Laravel para la recepción, almacenamiento y visualización de los datos ambientales en tiempo real.
+
+\section{Objetivos Específicos}
+\label{sec:objetivos-especificos}
+
+\begin{enumerate}[leftmargin=*]
+    \item Desarrollar el firmware para Arduino que permita la lectura periódica de los sensores DHT11 y BMP280 y la transmisión de los datos en formato JSON por el puerto serial.
+    \item Implementar la aplicación backend con Laravel, incluyendo modelos de datos, migraciones de base de datos, controladores y una API REST segura.
+    \item Crear comandos de consola (Artisan) para la escucha automática del puerto serial y el guardado persistente de lecturas.
+    \item Diseñar una interfaz de usuario responsiva utilizando Tailwind CSS, Livewire y Alpine.js que permita visualizar métricas actuales, historial de lecturas y gráficas de tendencia.
+    \item Proveer un panel de configuración de hardware que permita detectar puertos seriales, gestionar el demonio de escucha y liberar recursos del sistema operativo.
+\end{enumerate}
+
+% ============================================
+% CAPÍTULO 3: MARCO TEÓRICO
+% ============================================
+\chapter{Marco Teórico}
+\label{ch:marco-teorico}
+
+\section{Arduino}
+\label{sec:arduino}
+
+Arduino es una plataforma de prototipado electrónico de código abierto basada en hardware y software flexibles y fáciles de usar \cite{arduino2024}. Las placas Arduino son capaces de leer entradas (como la luz de un sensor, un dedo sobre un botón o un mensaje de Twitter) y convertirlas en salidas (activar un motor, encender un LED, publicar algo en línea). En este proyecto se utiliza una placa compatible con Arduino UNO o Nano para la adquisición de datos de sensores.
+
+\section{Sensor DHT11}
+\label{sec:dht11}
+
+El DHT11 es un sensor digital de temperatura y humedad relativa de bajo costo \cite{dht11datasheet}. Utiliza un sensor capacitivo de humedad y un termistor para medir el aire circundante, y envía una señal digital pinza mediante el pin de datos. Aunque su precisión no es comparable con sensores profesionales (humedad $\pm$5\%, temperatura $\pm$2°C), resulta suficiente para aplicaciones educativas y de monitoreo doméstico.
+
+\section{Sensor BMP280}
+\label{sec:bmp280}
+
+El BMP280 es un sensor digital de presión barométrica desarrollado por Bosch Sensortec \cite{bmp280datasheet}. Ofrece alta precisión y bajo consumo energético, además de poder estimar la altitud a partir de la presión atmosférica mediante el modelo de atmósfera estándar internacional. Su interfaz de comunicación puede ser I2C o SPI, siendo I2C la más común en el entorno Arduino.
+
+\section{Comunicación Serial}
+\label{sec:comunicacion-serial}
+
+La comunicación serial es un protocolo estándar para intercambiar datos entre un microcontrolador y una computadora. En este proyecto, el Arduino se conecta mediante un cable USB que emula un puerto serial (típicamente \texttt{/dev/tty.usbmodem*} en macOS/Linux o \texttt{COM*} en Windows). Los datos se transmiten como una secuencia de bytes que la aplicación Laravel interpreta línea por línea.
+
+\section{Laravel}
+\label{sec:laravel}
+
+Laravel es un framework de aplicaciones web de PHP con una sintaxis elegante y expresiva \cite{laravel2024}. Proporciona herramientas robustas para el enrutamiento, la persistencia de datos mediante Eloquent ORM, la migración de esquemas de base de datos, la gestión de colas, la autenticación y la construcción de APIs RESTful. La versión utilizada en este proyecto es la 13.x, que requiere PHP 8.3 o superior.
+
+\section{Livewire y Alpine.js}
+\label{sec:livewire}
+
+Livewire es un framework de desarrollo de interfaz de usuario para Laravel que permite crear componentes dinámicos sin abandonar la comodidad de PHP \cite{livewire2024}. Se combina con Alpine.js, un framework JavaScript minimalista, para manejar interacciones del lado del cliente como desplegables, modales y validaciones en tiempo real, manteniendo la lógica principal del estado en el servidor.
+
+\section{Tailwind CSS}
+\label{sec:tailwind}
+
+Tailwind CSS es un framework de utilidades CSS que permite construir diseños personalizados directamente en el marcado HTML \cite{tailwind2024}. En este proyecto se utiliza la versión 4.x junto con Mary UI, una librería de componentes diseñada específicamente para trabajar con Livewire y Tailwind.
+
+% ============================================
+% CAPÍTULO 4: DESARROLLO
+% ============================================
+\chapter{Desarrollo}
+\label{ch:desarrollo}
+
+Este capítulo detalla la arquitectura del sistema, el diseño del hardware, la implementación del firmware, la estructura de la base de datos, la lógica del backend y el diseño del frontend.
+
+\section{Diseño del Hardware}
+\label{sec:hardware}
+
+El hardware de la estación meteorológica consta de los siguientes elementos:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Placa Arduino UNO/Nano compatible.}
+    \item \textbf{Sensor DHT11:} conectado a un pin digital para lectura de temperatura y humedad.
+    \item \textbf{Sensor BMP280:} conectado mediante bus I2C (pines SDA y SCL) para lectura de presión y temperatura de referencia.
+    \item \textbf{Cable USB:} para alimentación y comunicación serial con el servidor.
+\end{itemize}
+
+\subsection{Diagrama de Conexiones}
+\label{subsec:diagrama-conexiones}
+
+A continuación se presenta el diagrama esquemático de conexiones entre el Arduino y los sensores. El usuario debe insertar aquí la imagen del diagrama realizado.
+
+% --------------------------------------------
+% TODO: Insertar imagen del diagrama de conexiones
+% --------------------------------------------
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.8\textwidth}{\centering\vspace{4cm}
+    \textit{Espacio reservado para el diagrama de conexiones del Arduino con los sensores DHT11 y BMP280.}\\
+    \textbf{Instrucción:} Reemplace este recuadro por su imagen usando:\\
+    \texttt{\textbackslash includegraphics[width=0.8\textwidth]\{diagrama\_conexiones.png\}}
+    \vspace{4cm}}}
+    \caption{Diagrama de conexiones del hardware meteorológico.}
+    \label{fig:diagrama-conexiones}
+\end{figure}
+
+\subsection{Fotografía del Montaje}
+\label{subsec:foto-montaje}
+
+La siguiente figura muestra el montaje físico del Arduino y los sensores en funcionamiento.
+
+% --------------------------------------------
+% TODO: Insertar imagen del Arduino funcionando
+% --------------------------------------------
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.8\textwidth}{\centering\vspace{4cm}
+    \textit{Espacio reservado para la fotografía del Arduino conectado y funcionando.}\\
+    \textbf{Instrucción:} Reemplace este recuadro por su imagen usando:\\
+    \texttt{\textbackslash includegraphics[width=0.8\textwidth]\{arduino\_funcionando.jpg\}}
+    \vspace{4cm}}}
+    \caption{Montaje físico del Arduino con sensores DHT11 y BMP280.}
+    \label{fig:arduino-funcionando}
+\end{figure}
+
+\section{Firmware del Arduino}
+\label{sec:firmware}
+
+El firmware del Arduino (no incluido en el repositorio de la aplicación web, pero diseñado para ser compatible) debe realizar las siguientes tareas:
+
+\begin{enumerate}[leftmargin=*]
+    \item Inicializar los sensores DHT11 y BMP280.
+    \item Leer las variables ambientales cada 5 a 30 segundos.
+    \item Enviar los datos por el puerto serial en formato JSON o texto plano.
+\end{enumerate}
+
+\subsection{Formato de Salida JSON (Recomendado)}
+\label{subsec:formato-json}
+
+El formato preferido para la comunicación es una línea de texto terminada en salto de línea que contenga un objeto JSON válido:
+
+\begin{lstlisting}[language=JavaScript, caption={Ejemplo de trama JSON enviada por el Arduino.}]
+{"temperature_c":24.2,
+ "temperature_bmp280_c":26.7,
+ "humidity_percent":55.1,
+ "pressure_hpa":1012.3,
+ "altitude_m":1420}
+\end{lstlisting}
+
+\subsection{Formato de Salida de Texto (Respaldo)}
+\label{subsec:formato-texto}
+
+Como mecanismo de respaldo, la aplicación también acepta un formato de texto plano legible por humanos, que es parseado mediante expresiones regulares en el backend:
+
+\begin{lstlisting}[caption={Ejemplo de trama de texto aceptada.}]
+Humedad: 55.1 %  [DHT11] Temp: 24.2 *C
+[BMP280] Temp: 26.7 *C  Presion: 1012.3 hPa
+Altitud aprox: 1420 m
+\end{lstlisting}
+
+\section{Arquitectura del Software}
+\label{sec:arquitectura}
+
+La aplicación web sigue la arquitectura Modelo-Vista-Controlador (MVC) propuesta por Laravel. Adicionalmente, se utilizan capas de servicio (\texttt{Services}) para encapsular la lógica de negocio reutilizable y comandos de consola (\texttt{Console Commands}) para la automatización de tareas.
+
+\subsection{Estructura de Directorios Relevante}
+\label{subsec:estructura}
+
+\begin{lstlisting}[language=bash, caption={Estructura simplificada del proyecto.}]
+weatherstation/
+|-- app/
+|   |-- Console/Commands/
+|   |   |-- WeatherSerialListen.php
+|   |   |-- WeatherSerialWatch.php
+|   |-- Http/Controllers/
+|   |   |-- WeatherDashboardController.php
+|   |   |-- WeatherReadingApiController.php
+|   |   |-- SerialLiveController.php
+|   |   |-- WeatherSettingsController.php
+|   |-- Http/Middleware/
+|   |   |-- EnsureIngestionToken.php
+|   |-- Models/
+|   |   |-- WeatherReading.php
+|   |   |-- AppSetting.php
+|   |-- Services/
+|   |   |-- WeatherReadingIngestor.php
+|   |   |-- SerialPortManager.php
+|-- database/migrations/
+|-- resources/views/
+|-- routes/web.php
+|-- routes/api.php
+\end{lstlisting}
+
+\section{Base de Datos}
+\label{sec:base-datos}
+
+Se utiliza PostgreSQL como motor de base de datos relacional. El esquema se gestiona mediante migraciones de Laravel, lo que garantiza la trazabilidad de los cambios y la reproducibilidad del entorno.
+
+\subsection{Tabla \texttt{weather\_readings}}
+\label{subsec:tabla-readings}
+
+Almacena cada lectura meteorológica recibida, ya sea por serial o por API.
+
+\begin{table}[H]
+\centering
+\caption{Estructura de la tabla \texttt{weather\_readings}.}
+\label{tab:weather-readings}
+\begin{tabular}{@{}llp{6cm}@{}}
+\toprule
+\textbf{Columna} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\texttt{id} & BIGINT (PK) & Identificador autoincremental. \\
+\texttt{temperature\_c} & DECIMAL(5,2) & Temperatura del DHT11 (°C). \\
+\texttt{temperature\_bmp280\_c} & DECIMAL(5,2), NULL & Temperatura del BMP280 (°C). \\
+\texttt{humidity\_percent} & DECIMAL(5,2) & Humedad relativa (\%). \\
+\texttt{pressure\_hpa} & DECIMAL(7,2) & Presión atmosférica (hPa). \\
+\texttt{altitude\_m} & DECIMAL(7,2), NULL & Altitud aproximada (m). \\
+\texttt{source} & VARCHAR(20) & Origen: \texttt{serial}, \texttt{api}, etc. \\
+\texttt{recorded\_at} & TIMESTAMP & Momento de la medición. \\
+\texttt{meta} & JSON, NULL & Metadatos adicionales (IP, raw, etc.). \\
+\texttt{created\_at} & TIMESTAMP & Marca de creación del registro. \\
+\texttt{updated\_at} & TIMESTAMP & Marca de última actualización. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Tabla \texttt{app\_settings}}
+\label{subsec:tabla-settings}
+
+Permite guardar configuraciones dinámicas del sistema, como el puerto serial y la velocidad en baudios, sin necesidad de modificar archivos de entorno.
+
+\begin{table}[H]
+\centering
+\caption{Estructura de la tabla \texttt{app\_settings}.}
+\label{tab:app-settings}
+\begin{tabular}{@{}llp{6cm}@{}}
+\toprule
+\textbf{Columna} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\texttt{id} & BIGINT (PK) & Identificador autoincremental. \\
+\texttt{key} & VARCHAR (unique) & Clave de configuración. \\
+\texttt{value} & TEXT, NULL & Valor asociado. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Backend}
+\label{sec:backend}
+
+\subsection{Modelos}
+\label{subsec:modelos}
+
+El modelo \texttt{WeatherReading} representa cada lectura meteorológica y define los atributos asignables masivamente (\texttt{fillable}) así como las conversiones de tipo (\texttt{casts}) para timestamps y JSON.
+
+\begin{lstlisting}[caption={Modelo WeatherReading.}]
+class WeatherReading extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'temperature_c', 'temperature_bmp280_c',
+        'humidity_percent', 'pressure_hpa', 'altitude_m',
+        'source', 'recorded_at', 'meta',
+    ];
+
+    protected $casts = [
+        'recorded_at' => 'datetime',
+        'meta' => 'array',
+    ];
+}
+\end{lstlisting}
+
+\subsection{Servicios}
+\label{subsec:servicios}
+
+\subsubsection{WeatherReadingIngestor}
+Encapsula la lógica de creación de una nueva lectura. Recibe el \textit{payload} parseado, la fuente (serial/api) y metadatos opcionales, y devuelve la instancia creada en base de datos.
+
+\subsubsection{SerialPortManager}
+Gestiona operaciones de bajo nivel con el sistema operativo:
+\begin{itemize}[leftmargin=*]
+    \item \texttt{listPorts()}: enumera dispositivos \texttt{/dev/tty.*} y \texttt{/dev/cu.*}.
+    \item \texttt{isListenerRunning()}: verifica si el proceso demonio de escucha está activo mediante archivos PID.
+    \item \texttt{getPortProcesses()}: utiliza \texttt{lsof} para detectar procesos que bloquean el puerto.
+    \item \texttt{readLine()}: abre el puerto serial, configura \texttt{stty} y lee una línea válida dentro de un tiempo límite.
+    \item \texttt{parseLine()}: interpreta tanto JSON como texto plano con expresiones regulares compatibles con UTF-8.
+\end{itemize}
+
+\subsection{Controladores}
+\label{subsec:controladores}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{WeatherDashboardController:} alimenta las vistas \texttt{landing}, \texttt{dashboard} (monitor) y \texttt{hardware}. Obtiene la última lectura, el historial paginado (25 filas) y los datos de las últimas 5 horas para las gráficas.
+    \item \textbf{WeatherReadingApiController:} expone el endpoint \texttt{POST /api/v1/readings} con validación estricta de rangos numéricos.
+    \item \textbf{SerialLiveController:} gestiona la vista \texttt{/live} y su endpoint AJAX \texttt{/api/v1/serial/live} que lee directamente del puerto sin persistir en base de datos.
+    \item \textbf{WeatherSettingsController:} permite actualizar configuraciones, iniciar, detener y reiniciar el demonio de escucha serial mediante comandos del sistema operativo.
+\end{itemize}
+
+\subsection{Middleware de Seguridad}
+\label{subsec:middleware}
+
+El middleware \texttt{EnsureIngestionToken} protege la API REST comparando de forma segura (mediante \texttt{hash\_equals}) el token proporcionado en la cabecera \texttt{X-Weather-Token} contra el valor configurado en \texttt{services.weather\_ingest.token}.
+
+\section{API REST}
+\label{sec:api-rest}
+
+La API permite la ingesta de datos desde clientes externos. A continuación se muestra un ejemplo de consumo mediante \texttt{curl}:
+
+\begin{lstlisting}[language=bash, caption={Ejemplo de ingesta por API REST.}]
+curl -X POST http://localhost:8000/api/v1/readings \
+  -H "Content-Type: application/json" \
+  -H "X-Weather-Token: tu-token-seguro" \
+  -d '{
+    "temperature_c": 24.7,
+    "temperature_bmp280_c": 26.5,
+    "humidity_percent": 58.4,
+    "pressure_hpa": 1011.8,
+    "recorded_at": "2026-05-18T16:30:00Z"
+  }'
+\end{lstlisting}
+
+La respuesta exitosa incluye el identificador del registro creado y su marca temporal en formato ISO 8601.
+
+\section{Comunicación Serial y Comandos Artisan}
+\label{sec:comandos-artisan}
+
+\subsection{weather:serial-listen}
+\label{subsec:serial-listen}
+
+Este comando abre el puerto serial indicado, configura los parámetros de la terminal con \texttt{stty} y entra en un bucle de lectura. Cada línea recibida se parsea; si es válida, se persiste mediante \texttt{WeatherReadingIngestor}. El comando también gestiona un archivo PID en \texttt{storage/app/serial-listener.pid} para que otros procesos puedan consultar su estado.
+
+\subsection{weather:serial-watch}
+\label{subsec:serial-watch}
+
+Implementa un modo automático (	extit{watchdog}) que verifica cada 3 segundos la existencia del puerto serial. Si el Arduino se conecta y no hay listener activo, lo inicia en segundo plano. Si el puerto desaparece, detiene el proceso hijo de forma ordenada (\texttt{SIGTERM}) y, de ser necesario, forzada (\texttt{SIGKILL}).
+
+\section{Frontend}
+\label{sec:frontend}
+
+\subsection{Vistas Principales}
+\label{subsec:vistas}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Landing (\texttt{/}):} página pública con tarjetas de métricas clave en diseño \textit{glassmorphic}. Ideal para pantallas informativas.
+    \item \textbf{Monitor (\texttt{/monitor}):} panel técnico con indicadores de estado, gráfica histórica de las últimas 5 horas y tabla paginada de lecturas.
+    \item \textbf{Consola en Vivo (\texttt{/live}):} terminal web que consulta directamente al puerto serial vía AJAX, sin tocar la base de datos.
+    \item \textbf{Hardware (\texttt{/hardware}):} interfaz para autodetectar puertos, ajustar baud rate y controlar el ciclo de vida del demonio serial.
+\end{itemize}
+
+\subsection{Tecnologías Frontend}
+\label{subsec:tech-frontend}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Tailwind CSS v4:} estilos utilitarios y diseño responsivo.
+    \item \textbf{Mary UI v2:} componentes predefinidos sobre Tailwind y Livewire.
+    \item \textbf{Alpine.js v3:} interactividad ligera (desplegables, tabs, estados de carga).
+    \item \textbf{Vite v6:} bundler de assets con Hot Module Replacement (HMR).
+\end{itemize}
+
+% ============================================
+% CAPÍTULO 5: RESULTADOS Y PRUEBAS
+% ============================================
+\chapter{Resultados y Pruebas}
+\label{ch:resultados}
+
+El sistema fue desplegado en un entorno local de desarrollo (macOS/Linux) y probado con un Arduino UNO conectado por USB. A continuación se presentan las evidencias de funcionamiento.
+
+\section{Panel de Monitoreo}
+\label{sec:resultado-monitor}
+
+La figura \ref{fig:monitor} muestra el panel técnico con la última lectura recibida, la gráfica histórica y el historial paginado.
+
+% --------------------------------------------
+% TODO: Insertar captura del panel /monitor
+% --------------------------------------------
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{4cm}
+    \textit{Espacio reservado para captura de pantalla del panel técnico /monitor.}\\
+    \textbf{Instrucción:} Reemplace este recuadro por su imagen usando:\\
+    \texttt{\textbackslash includegraphics[width=0.9\textwidth]\{monitor.png\}}
+    \vspace{4cm}}}
+    \caption{Panel técnico de monitoreo con historial y gráficas.}
+    \label{fig:monitor}
+\end{figure}
+
+\section{Landing Pública}
+\label{sec:resultado-landing}
+
+La figura \ref{fig:landing} ilustra la vista pública optimizada para usuarios finales.
+
+% --------------------------------------------
+% TODO: Insertar captura de la landing
+% --------------------------------------------
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{4cm}
+    \textit{Espacio reservado para captura de pantalla de la landing pública.}\\
+    \textbf{Instrucción:} Reemplace este recuadro por su imagen usando:\\
+    \texttt{\textbackslash includegraphics[width=0.9\textwidth]\{landing.png\}}
+    \vspace{4cm}}}
+    \caption{Landing pública con métricas actuales.}
+    \label{fig:landing}
+\end{figure}
+
+\section{Configuración de Hardware}
+\label{sec:resultado-hardware}
+
+La figura \ref{fig:hardware} muestra la interfaz de gestión del puerto serial.
+
+% --------------------------------------------
+% TODO: Insertar captura de /hardware
+% --------------------------------------------
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{4cm}
+    \textit{Espacio reservado para captura de pantalla de la configuración de hardware.}\\
+    \textbf{Instrucción:} Reemplace este recuadro por su imagen usando:\\
+    \texttt{\textbackslash includegraphics[width=0.9\textwidth]\{hardware.png\}}
+    \vspace{4cm}}}
+    \caption{Panel de configuración de hardware y gestión del demonio serial.}
+    \label{fig:hardware}
+\end{figure}
+
+\section{Pruebas de Ingesta}
+\label{sec:pruebas-ingesta}
+
+Se realizaron pruebas simultáneas de ingesta por serial y por API REST. En ambos casos, los datos se almacenaron correctamente y se reflejaron en el dashboard en menos de un segundo después de la recepción.
+
+% ============================================
+% CAPÍTULO 6: CONCLUSIONES
+% ============================================
+\chapter{Conclusiones}
+\label{ch:conclusiones}
+
+\begin{enumerate}[leftmargin=*]
+    \item Se logró integrar exitosamente el hardware de Arduino con una aplicación web moderna basada en Laravel, demostrando que es viable construir estaciones meteorológicas digitales de bajo costo sin sacrificar funcionalidad ni diseño.
+    
+    \item El uso de comandos Artisan para la gestión del puerto serial permite automatizar la ingesta de datos y reduce la intervención manual del usuario, facilitando el despliegue en entornos de producción ligeros.
+    
+    \item La arquitectura MVC de Laravel, complementada con servicios dedicados y middleware de seguridad, proporciona un backend escalable, mantenible y seguro frente a ingresos no autorizados.
+    
+    \item El frontend desarrollado con Tailwind CSS, Livewire y Alpine.js ofrece una experiencia de usuario fluida y responsiva, comparable a aplicaciones de una sola página (SPA) pero con la simplicidad de mantener el estado en el servidor.
+    
+    \item El soporte de doble formato de entrada (JSON y texto plano) garantiza la compatibilidad con distintas versiones de firmware y facilita la depuración del hardware sin interrumpir el servicio web.
+\end{enumerate}
+
+% ============================================
+% CAPÍTULO 7: TRABAJO FUTURO
+% ============================================
+\chapter{Trabajo Futuro}
+\label{ch:trabajo-futuro}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Persistencia en la nube:} sincronizar lecturas con servicios como ThingSpeak, AWS IoT o Firebase para acceso remoto.
+    \item \textbf{Notificaciones y alertas:} implementar umbrales configurables que disparen alertas por correo o Telegram cuando se detecten condiciones extremas.
+    \item \textbf{Sensor adicional de lluvia y viento:} ampliar el hardware con sensores de balancín y anemómetro para reportes meteorológicos más completos.
+    \item \textbf{Autenticación de usuarios:} añadir roles (administrador, observador) para restringir el acceso al panel técnico.
+    \item \textbf{Predicción simple:} utilizar los datos históricos almacenados para generar tendencias predictivas mediante regresión lineal o modelos de series temporales.
+\end{itemize}
+
+% ============================================
+% BIBLIOGRAFÍA
+% ============================================
+\bibliographystyle{ieeetr}
+\bibliography{bibliografia}
+
+\end{document}
