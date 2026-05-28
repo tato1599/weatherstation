@@ -507,11 +507,11 @@ La interfaz incorpora los siguientes mecanismos de alerta y control:
 
 \section{Herramienta utilizada}
 
-Previo al montaje físico, se realizaron pruebas de validación lógica en la plataforma \textbf{Wokwi} (\url{https://wokwi.com}), un simulador en línea de circuitos con Arduino que permite ensamblar componentes virtuales, cargar código C++ y observar el comportamiento del sistema sin necesidad de hardware físico.
+Previo al montaje físico, se realizaron pruebas de validación lógica en la plataforma \textbf{Tinkercad} (\url{https://www.tinkercad.com}), un simulador en línea de circuitos con Arduino que permite ensamblar componentes virtuales, cargar código C++ y observar el comportamiento del sistema sin necesidad de hardware físico.
 
-Wokwi fue seleccionada por las siguientes ventajas:
+Tinkercad fue seleccionada por las siguientes ventajas:
 \begin{itemize}[leftmargin=*]
-    \item Soporte nativo para Arduino UNO, sensores DHT22/BMP280 y periféricos comunes.
+    \item Soporte nativo para Arduino UNO, sensores DHT11/DHT22/BMP280 y periféricos comunes.
     \item Consola serial integrada que emula la comunicación UART con la PC.
     \item Depuración paso a paso y visualización de estados de pines en tiempo real.
     \item Colaboración en línea y facilidad para compartir esquemas mediante URL.
@@ -522,11 +522,11 @@ Wokwi fue seleccionada por las siguientes ventajas:
 \begin{figure}[H]
     \centering
     \fbox{\parbox{0.9\textwidth}{\centering\vspace{3cm}
-    \textit{Espacio reservado para captura de pantalla del simulador Wokwi.}\\
+    \textit{Espacio reservado para captura de pantalla del simulador Tinkercad.}\\
     Mostrar el circuito virtual con sensores conectados y consola serial con JSON.
     \vspace{3cm}}}
-    \caption{Simulación del circuito en Wokwi con lecturas virtuales.}
-    \label{fig:simulacion-wokwi}
+    \caption{Simulación del circuito en Tinkercad con lecturas virtuales.}
+    \label{fig:simulacion-tinkercad}
 \end{figure}
 
 \section{Validación del funcionamiento lógico}
@@ -534,7 +534,7 @@ Wokwi fue seleccionada por las siguientes ventajas:
 Durante la fase de simulación se verificaron los siguientes aspectos críticos:
 
 \begin{enumerate}[leftmargin=*]
-    \item \textbf{Lectura de sensores:} Se validó que el DHT11 (simulado como DHT22 en Wokwi) y el BMP280 respondieran correctamente a las llamadas de biblioteca y que los valores generados estuvieran dentro de rangos físicos coherentes.
+    \item \textbf{Lectura de sensores:} Se validó que el DHT11 (o su equivalente DHT22 en Tinkercad) y el BMP280 respondieran correctamente a las llamadas de biblioteca y que los valores generados estuvieran dentro de rangos físicos coherentes.
     \item \textbf{Conversión ADC:} Se comprobó que los valores de los potenciómetros virtuales se mapearan correctamente al rango de umbrales de temperatura esperado.
     \item \textbf{Actuación de salidas:} Se verificó el encendido del LED de alerta y la variación del ciclo de trabajo PWM cuando el valor simulado de temperatura excedía el umbral ajustado.
     \item \textbf{Comunicación serial:} Se confirmó que la trama JSON se formateara correctamente y que los comandos \texttt{START}, \texttt{STOP} y \texttt{GET\_STATUS} fueran parseados e interpretados adecuadamente por el firmware.
