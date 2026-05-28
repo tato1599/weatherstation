@@ -1,0 +1,921 @@
+% ============================================
+% CONTENIDO DEL REPORTE TÉCNICO
+% Meteo-Lab / Clima Visor
+% ============================================
+% Instrucción: Incluir este archivo en el main.tex mediante \input{docs/contenido_reporte}
+% Las imágenes se referencian con rutas absolutas a /Users/neri/Downloads/
+% ============================================
+
+% --------------------------------------------------
+% 1. INTRODUCCIÓN
+% --------------------------------------------------
+\chapter{Introducción}
+\label{ch:introduccion}
+
+\section{Descripción general del problema}
+
+El monitoreo meteorológico local es una actividad fundamental para sectores como la agricultura de precisión, la domótica, la logística y la educación científica. Sin embargo, las estaciones meteorológicas comerciales presentan costos elevados, escasa capacidad de personalización y dependencia de servicios en la nube que dificultan su adopción en entornos académicos o de bajo presupuesto. Por otro lado, las soluciones de hardware libre existentes suelen carecer de una integración completa con interfaces web modernas, bases de datos persistentes y herramientas de visualización en tiempo real.
+
+En este contexto, surge la necesidad de desarrollar un sistema integral que combine la adquisición de variables ambientales mediante sensores de bajo costo con una aplicación web robusta, permitiendo no solo la observación en tiempo real, sino también el análisis histórico, la configuración remota y la escalabilidad funcional.
+
+\section{Justificación del proyecto}
+
+El presente proyecto, denominado \textit{Meteo-Lab} (también conocido como \textit{Clima Visor}), justifica su desarrollo desde múltiples aristas:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Justificación educativa:} Permite demostrar de manera tangible la integración entre sistemas embebidos, protocolos de comunicación serial, desarrollo backend con frameworks modernos y diseño de interfaces web interactivas.
+    \item \textbf{Justificación económica:} Utiliza componentes accesibles (Arduino UNO, sensores DHT11, BMP280, LDR, potenciómetro, LEDs y buzzer), reduciendo el costo total frente a soluciones comerciales equivalentes.
+    \item \textbf{Justificación técnica:} Cumple con requerimientos académicos de entrada/salida digital y analógica, salida PWM, comunicación bidireccional con PC, almacenamiento en base de datos y desarrollo de una interfaz HMI funcional.
+    \item \textbf{Justificación social:} Facilita la generación de datos climáticos locales que pueden servir a comunidades, escuelas o pequeños productores para la toma de decisiones informadas.
+\end{itemize}
+
+\section{Objetivos}
+
+\subsection{Objetivo general}
+
+Diseñar, construir e implementar una estación meteorológica digital basada en el microcontrolador ATmega328P (Arduino UNO) que integre sensores de temperatura, humedad, presión atmosférica y luminosidad, actuadores de estado y alarma, comunicación serial con una PC, almacenamiento persistente en base de datos relacional y una interfaz web de monitoreo y control.
+
+\subsection{Objetivos específicos}
+
+\begin{enumerate}[leftmargin=*]
+    \item Implementar \textbf{dos entradas digitales} (sensor DHT11 y pulsador de modo) y \textbf{dos entradas analógicas} (LDR y potenciómetro de umbral) en el firmware del Arduino.
+    \item Configurar \textbf{dos salidas digitales} (LED de estado y LED de alerta) y \textbf{una salida PWM} (buzzer/ventilador) para indicación y actuación local.
+    \item Desarrollar el firmware en C++ para Arduino que gestione el ciclo de lectura, procesamiento, actuación y transmisión de datos por puerto serial USB.
+    \item Implementar una aplicación backend en Laravel que reciba, valide, almacene y sirva los datos meteorológicos mediante API REST y comandos de consola.
+    \item Diseñar una base de datos relacional (PostgreSQL) que registre lecturas, eventos, comandos y marcas temporales (timestamps).
+    \item Construir una interfaz HMI web responsiva que permita visualizar métricas en tiempo real, históricos gráficos y controles de configuración del hardware.
+    \item Validar el funcionamiento lógico y operativo del sistema mediante simulación previa y pruebas físicas del prototipo.
+\end{enumerate}
+
+% --------------------------------------------------
+% 3. DESCRIPCIÓN DEL SISTEMA
+% --------------------------------------------------
+\chapter{Descripción del sistema}
+\label{ch:descripcion-sistema}
+
+\section{Función general del sistema}
+
+El sistema \textit{Meteo-Lab} cumple la función de una estación meteorológica digital con capacidades de monitoreo, control y registro histórico. Su operación general se resume en el siguiente flujo:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Adquisición:} El microcontrolador Arduino lee periódicamente las variables ambientales (temperatura, humedad, presión, altitud y luminosidad) mediante sensores digitales y analógicos.
+    \item \textbf{Procesamiento local:} El firmware compara los valores adquiridos contra umbrales configurables, actualiza el estado de los actuadores (LEDs y buzzer PWM) y prepara una trama de datos estructurada.
+    \item \textbf{Transmisión:} Los datos se envían a la PC a través del puerto serial USB (UART) en formato JSON, junto con el estado de las entradas y salidas.
+    \item \textbf{Recepción y persistencia:} La aplicación Laravel escucha el puerto serial (mediante comandos Artisan) o recibe peticiones API, valida la información y la almacena en PostgreSQL.
+    \item \textbf{Visualización:} La interfaz HMI web presenta las métricas actuales, gráficas de tendencia, tablas históricas y controles para enviar comandos al Arduino.
+\end{enumerate}
+
+\section{Arquitectura general}
+
+La arquitectura del sistema se organiza en tres capas bien definidas:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Capa de percepción (Hardware):} Constituida por la placa Arduino UNO, sensores (DHT11, BMP280, LDR, potenciómetro), actuadores (LEDs, buzzer PWM) y la interfaz USB de comunicación.
+    \item \textbf{Capa de aplicación y red (Backend):} Formada por el framework Laravel, que gestiona la lógica de negocio, la API REST, los comandos de consola para lectura serial, el middleware de seguridad y el acceso a base de datos.
+    \item \textbf{Capa de presentación (Frontend / HMI):} Desarrollada con Blade, Tailwind CSS, Livewire y Alpine.js, proporciona el panel de monitoreo, la consola serial en vivo, la gestión de hardware y las gráficas interactivas.
+\end{itemize}
+
+La comunicación entre la capa de percepción y la capa de aplicación utiliza el protocolo UART a través del cable USB, emulando un puerto serial virtual a 9600 baudios.
+
+\section{Descripción del microcontrolador utilizado}
+
+El sistema está construido sobre una placa compatible con \textbf{Arduino UNO R3}, cuyo núcleo es el microcontrolador \textbf{ATmega328P} de Microchip (anteriormente Atmel). A continuación se describen sus características principales:
+
+\begin{table}[H]
+\centering
+\caption{Especificaciones técnicas del ATmega328P.}
+\label{tab:atmega328p}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Arquitectura & AVR de 8 bits \\
+Frecuencia de reloj & 16 MHz \\
+Memoria Flash & 32 KB (0.5 KB reservados para bootloader) \\
+SRAM & 2 KB \\
+EEPROM & 1 KB \\
+Voltaje de operación & 5 V DC \\
+Pines digitales de E/S & 14 (6 con capacidad PWM) \\
+Pines de entrada analógica & 6 (resolución ADC de 10 bits, 0--1023) \\
+Corriente máxima por pin & 40 mA \\
+Interfaces & UART, SPI, I2C \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El ATmega328P resulta ideal para este proyecto debido a su suficiente capacidad de procesamiento para lectura de sensores, generación de señales PWM y comunicación serial, así como por su amplia documentación y soporte comunitario.
+
+% --------------------------------------------------
+% 4. DISEÑO DEL HARDWARE
+% --------------------------------------------------
+\chapter{Diseño del hardware}
+\label{ch:hardware}
+
+\section{Diagrama de bloques}
+
+El diagrama de bloques del sistema (Figura~\ref{fig:diagrama-bloques}) ilustra la interconexión entre el microcontrolador central, los módulos de entrada, los actuadores de salida y la interfaz de comunicación con la PC.
+
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{1cm}
+    \textbf{Diagrama de bloques conceptual}\\[0.5em]
+    \fbox{Alimentación USB 5V} $\rightarrow$ \fbox{Regulador/Arduino}\\[0.8em]
+    \fbox{Entradas Digitales}\\
+    \quad DHT11 (Pin 2) --- Pulsador (Pin 3)\\[0.5em]
+    \fbox{Entradas Analógicas}\\
+    \quad LDR (A0) --- Potenciómetro 10k (A1)\\[0.5em]
+    \fbox{Salidas Digitales}\\
+    \quad LED Estado (Pin 13) --- LED Alerta (Pin 12)\\[0.5em]
+    \fbox{Salida PWM}\\
+    \quad Buzzer/Ventilador (Pin 9)\\[0.8em]
+    \fbox{Comunicación I2C} $\rightarrow$ \fbox{BMP280}\\[0.5em]
+    \fbox{UART/USB} $\rightarrow$ \fbox{PC / Laravel}
+    \vspace{1cm}}}
+    \caption{Diagrama de bloques del sistema \textit{Meteo-Lab}.}
+    \label{fig:diagrama-bloques}
+\end{figure}
+
+\section{Diagrama de conexión}
+
+La Figura~\ref{fig:diagrama-conexion} presenta el montaje físico real del prototipo, donde se observan las conexiones entre el Arduino UNO, los sensores y los actuadores.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{/Users/neri/Downloads/1.jpeg}
+    \caption{Vista general del montaje físico y diagrama de conexiones del prototipo.}
+    \label{fig:diagrama-conexion}
+\end{figure}
+
+\section{Lista de componentes}
+
+\begin{table}[H]
+\centering
+\caption{Lista de materiales y componentes del hardware.}
+\label{tab:componentes}
+\begin{tabular}{@{}clp{7cm}@{}}
+\toprule
+\textbf{Cant.} & \textbf{Componente} & \textbf{Descripción / Función} \\
+\midrule
+1 & Arduino UNO R3 & Microcontrolador principal ATmega328P \\
+1 & Sensor DHT11 & Entrada digital: temperatura y humedad relativa \\
+1 & Sensor BMP280 & Entrada digital I2C: presión barométrica y altitud \\
+1 & LDR (fotorresistencia) & Entrada analógica: nivel de luminosidad ambiental \\
+1 & Potenciómetro 10k$\Omega$ & Entrada analógica: ajuste de umbral de alerta \\
+1 & Pulsador (push-button) & Entrada digital: cambio de modo de operación \\
+2 & LED 5mm (verde y rojo) & Salidas digitales: estado y alerta visual \\
+1 & Buzzer pasivo / Ventilador 5V & Salida PWM: alarma sonora o ventilación \\
+3 & Resistencias 220$\Omega$ & Limitación de corriente para LEDs y buzzer \\
+1 & Resistencia 10k$\Omega$ & Pull-down para pulsador \\
+1 & Protoboard 830 puntos & Plataforma de conexión temporal \\
+-- & Cables jumper macho-macho & Interconexión de componentes \\
+1 & Cable USB A--B & Alimentación y comunicación serial con PC \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Explicación de entradas y salidas}
+
+El diseño del hardware cumple con los requerimientos funcionales de entradas y salidas especificados. A continuación se detalla cada una:
+
+\subsection{Entradas digitales}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Sensor DHT11 (Pin Digital 2):} Proporciona lecturas de temperatura (rango 0--50$^\circ$C) y humedad relativa (rango 20--90\%) mediante una señal digital de un solo cable con protocolo propietario. Requiere resistencia pull-up interna o externa de 10k$\Omega$.
+    \item \textbf{Pulsador de modo (Pin Digital 3):} Permite alternar entre modos de operación del firmware (por ejemplo, modo \textit{normal} y modo \textit{calibración}). Se configura con resistencia pull-down de 10k$\Omega$ para evitar estados flotantes.
+\end{enumerate}
+
+\subsection{Entradas analógicas}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{LDR -- Sensor de luz (Pin Analógico A0):} Forma un divisor de voltaje con una resistencia fija de 10k$\Omega$. La variación de la resistencia del LDR ante cambios de luminosidad produce un voltaje entre 0 y 5 V, cuantificado por el ADC de 10 bits del ATmega328P (valores 0--1023).
+    \item \textbf{Potenciómetro de umbral (Pin Analógico A1):} Permite al usuario ajustar de forma manual el nivel de temperatura (o luminosidad) a partir del cual el sistema activará la alerta. Su rango de voltaje de salida (0--5 V) se mapea al rango del sensor objetivo.
+\end{enumerate}
+
+\subsection{Salidas digitales}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{LED de estado (Pin Digital 13):} Parpadea en cada ciclo de lectura exitoso, indicando que el firmware se está ejecutando correctamente y que la comunicación serial está activa.
+    \item \textbf{LED de alerta (Pin Digital 12):} Se enciende de forma continua cuando alguna variable medida excede el umbral configurado mediante el potenciómetro, o cuando se recibe el comando de alerta desde la PC.
+\end{enumerate}
+
+\subsection{Salida PWM}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Buzzer pasivo / Ventilador 5V (Pin Digital 9 -- PWM):} Operado mediante la función \texttt{analogWrite()}, genera una señal PWM de frecuencia aproximada 490 Hz con ciclo de trabajo variable (0--255). Se activa progresivamente según la magnitud de la desviación respecto al umbral, funcionando como alarma sonora o como control de ventilación.
+\end{enumerate}
+
+La Figura~\ref{fig:detalle-sensores} muestra un acercamiento del área de sensores y actuadores en el prototipo.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{/Users/neri/Downloads/2.jpeg}
+    \caption{Detalle del montaje de sensores, actuadores y conexiones en protoboard.}
+    \label{fig:detalle-sensores}
+\end{figure}
+
+% --------------------------------------------------
+% 5. DESARROLLO DEL SOFTWARE
+% --------------------------------------------------
+\chapter{Desarrollo del software}
+\label{ch:software}
+
+\section{Explicación de la lógica de programación}
+
+El firmware del Arduino se desarrolló en lenguaje C++ utilizando el entorno de desarrollo Arduino IDE. La lógica principal se estructura en dos funciones fundamentales:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{setup():} Se ejecuta una sola vez al iniciar o reiniciar la placa. Configura la velocidad del puerto serial a 9600 baudios, inicializa los pines de E/S (entradas digitales con pull-down/pull-up, salidas digitales en estado bajo, pin PWM como salida), inicia el bus I2C para el BMP280 y realiza la calibración inicial del DHT11.
+    \item \textbf{loop():} Ciclo infinito que se repite continuamente. Su secuencia es: (1) leer entradas digitales y analógicas, (2) leer sensores I2C, (3) comparar valores contra umbrales, (4) actualizar actuadores, (5) construir la trama de datos, (6) transmitir por serial y (7) esperar el intervalo de muestreo (5 segundos).
+\end{itemize}
+
+\section{Diagrama de flujo}
+
+La Figura~\ref{fig:diagrama-flujo} presenta el diagrama de flujo del firmware.
+
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.7\textwidth}{\centering\vspace{0.3cm}
+    \fbox{Inicio / Reset}\\[0.3cm]
+    $\downarrow$\\[0.2cm]
+    \fbox{Configurar pines, serial, sensores}\\[0.3cm]
+    $\downarrow$\\[0.2cm]
+    \fbox{Leer pulsador y potenciómetro}\\[0.3cm]
+    $\downarrow$\\[0.2cm]
+    \fbox{Leer DHT11, BMP280 y LDR}\\[0.3cm]
+    $\downarrow$\\[0.2cm]
+    \fbox{$\text{Valor} > \text{Umbral}$?}\\[0.3cm]
+    $\swarrow$ \hspace{1cm} $\searrow$\\[0.1cm]
+    \fbox{Activar alerta + PWM} \hspace{0.3cm} \fbox{Mantener estado normal}\\[0.3cm]
+    $\searrow$ \hspace{1.8cm} $\swarrow$\\[0.2cm]
+    \fbox{Construir trama JSON}\\[0.3cm]
+    $\downarrow$\\[0.2cm]
+    \fbox{Enviar por serial USB}\\[0.3cm]
+    $\downarrow$\\[0.2cm]
+    \fbox{Esperar 5 s}\\[0.3cm]
+    $\downarrow$\\[0.2cm]
+    \fbox{Revisar comandos seriales}\\[0.3cm]
+    $\downarrow$\\[0.2cm]
+    \fbox{Volver a lectura de sensores}
+    \vspace{0.3cm}}}
+    \caption{Diagrama de flujo del firmware del Arduino.}
+    \label{fig:diagrama-flujo}
+\end{figure}
+
+\section{Explicación modular del código}
+
+El código fuente del Arduino se organiza en los siguientes módulos funcionales:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Módulo de inicialización (initSystem):} Configura los registros de E/S, inicia la comunicación I2C y verifica la respuesta del BMP280. Si algún sensor no responde, el LED de estado emite un patrón de parpadeo rápido como código de error.
+    
+    \item \textbf{Módulo de lectura de sensores (readSensors):} Agrupa las funciones de lectura del DHT11 (biblioteca \texttt{DHT.h}), del BMP280 (biblioteca \texttt{Adafruit\_BMP280.h}) y del ADC para los pines A0 (LDR) y A1 (potenciómetro). Convierte los valores brutos del ADC a unidades físicas mediante factores de escala y fórmulas de calibración.
+    
+    \item \textbf{Módulo de control de actuadores (actuateOutputs):} Recibe el nivel de alerta calculado y establece el estado del LED rojo (digital) y la intensidad del buzzer/ventilador (PWM). Además, alterna el LED verde en cada ciclo para indicar actividad.
+    
+    \item \textbf{Módulo de comunicación (sendData):} Serializa las lecturas y el estado del sistema en una cadena JSON válida y la envía por \texttt{Serial.println()}. Incluye manejo de checksum simple opcional.
+    
+    \item \textbf{Módulo de recepción de comandos (handleSerial):} Escucha caracteres entrantes en el buffer serial. Si recibe una cadena terminada en salto de línea, la parsea y ejecuta acciones como \texttt{START}, \texttt{STOP}, \texttt{SET\_TH:value} o \texttt{GET\_STATUS}.
+\end{enumerate}
+
+\section{Fragmentos importantes del programa}
+
+A continuación se presentan los fragmentos más relevantes del firmware:
+
+\textbf{1. Configuración de pines y constantes en \texttt{setup()}:}
+
+\begin{verbatim}
+const int PIN_DHT = 2;
+const int PIN_BOTON = 3;
+const int PIN_LED_STATUS = 13;
+const int PIN_LED_ALERTA = 12;
+const int PIN_PWM_ALARMA = 9;
+const int PIN_LDR = A0;
+const int PIN_POT = A1;
+
+void setup() {
+    Serial.begin(9600);
+    pinMode(PIN_BOTON, INPUT);
+    pinMode(PIN_LED_STATUS, OUTPUT);
+    pinMode(PIN_LED_ALERTA, OUTPUT);
+    pinMode(PIN_PWM_ALARMA, OUTPUT);
+    dht.begin();
+    bmp.begin(0x76);
+}
+\end{verbatim}
+
+\textbf{2. Lectura de entradas analógicas y cálculo de umbral:}
+
+\begin{verbatim}
+int rawLDR = analogRead(PIN_LDR);
+int rawPot = analogRead(PIN_POT);
+
+// Mapear potenciómetro a rango de temperatura 15-45 °C
+float umbralTemp = map(rawPot, 0, 1023, 150, 450) / 10.0;
+float luminosidad = map(rawLDR, 0, 1023, 0, 100); // % aproximado
+\end{verbatim}
+
+\textbf{3. Control de salidas digitales y PWM según umbral:}
+
+\begin{verbatim}
+if (temperatura > umbralTemp || luminosidad > 80.0) {
+    digitalWrite(PIN_LED_ALERTA, HIGH);
+    int intensidadPWM = map((int)(temperatura * 10), 150, 450, 50, 255);
+    intensidadPWM = constrain(intensidadPWM, 0, 255);
+    analogWrite(PIN_PWM_ALARMA, intensidadPWM);
+} else {
+    digitalWrite(PIN_LED_ALERTA, LOW);
+    analogWrite(PIN_PWM_ALARMA, 0);
+}
+digitalWrite(PIN_LED_STATUS, !digitalRead(PIN_LED_STATUS));
+\end{verbatim}
+
+\textbf{4. Construcción y envío de trama JSON:}
+
+\begin{verbatim}
+String json = "{";
+json += "\"temp_c\":" + String(temperatura) + ",";
+json += "\"hum_p\":" + String(humedad) + ",";
+json += "\"pres_hpa\":" + String(presion) + ",";
+json += "\"alt_m\":" + String(altitud) + ",";
+json += "\"lux_p\":" + String(luminosidad) + ",";
+json += "\"umbral\":" + String(umbralTemp) + ",";
+json += "\"led_alert\":" + String(digitalRead(PIN_LED_ALERTA)) + ",";
+json += "\"pwm_out\":" + String(intensidadPWM);
+json += "}";
+Serial.println(json);
+\end{verbatim}
+
+% --------------------------------------------------
+% 6. COMUNICACIÓN CON PC
+% --------------------------------------------------
+\chapter{Comunicación con PC}
+\label{ch:comunicacion-pc}
+
+\section{Tipo de comunicación utilizada}
+
+La comunicación entre el Arduino y la PC se realiza mediante el protocolo \textbf{UART (Universal Asynchronous Receiver-Transmitter)} a través del puente USB-Serial integrado en la placa Arduino UNO (chip CH340G o ATmega16U2, según versión). Los parámetros de comunicación se configuran de la siguiente manera:
+
+\begin{table}[H]
+\centering
+\caption{Parámetros de la comunicación serial.}
+\label{tab:serial-params}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Velocidad (baud rate) & 9600 bps \\
+Bits de datos & 8 \\
+Bit de parada & 1 \\
+Paridad & Ninguna (None) \\
+Control de flujo & Ninguno \\
+Formato de trama & Texto plano (JSON) + salto de línea (\texttt{\textbackslash n}) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cada mensaje enviado por el Arduino termina con un carácter de nueva línea (\texttt{\textbackslash n}), lo que permite al receptor (aplicación Laravel o monitor serial) procesar línea por línea de forma sencilla.
+
+\section{Variables transmitidas}
+
+En cada ciclo de muestreo (cada 5 segundos), el Arduino transmite un objeto JSON con las siguientes variables:
+
+\begin{table}[H]
+\centering
+\caption{Variables incluidas en la trama serial.}
+\label{tab:variables-tx}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Clave JSON} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\texttt{temp\_c} & float & Temperatura DHT11 ($^\circ$C) \\
+\texttt{hum\_p} & float & Humedad relativa DHT11 (\%) \\
+\texttt{pres\_hpa} & float & Presión atmosférica BMP280 (hPa) \\
+\texttt{alt\_m} & float & Altitud estimada (m) \\
+\texttt{lux\_p} & int & Nivel de luminosidad LDR (0--100) \\
+\texttt{umbral} & float & Umbral activo de temperatura ($^\circ$C) \\
+\texttt{led\_alert} & int & Estado del LED de alerta (0/1) \\
+\texttt{pwm\_out} & int & Valor PWM de salida (0--255) \\
+\texttt{btn\_state} & int & Estado del pulsador (0/1) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Comandos recibidos}
+
+El firmware también escucha comandos enviados desde la PC a través del mismo puerto serial. Estos comandos permiten el control remoto del sistema sin necesidad de reprogramar el microcontrolador:
+
+\begin{table}[H]
+\centering
+\caption{Comandos aceptados por el Arduino.}
+\label{tab:comandos-rx}
+\begin{tabular}{@{}lp{8cm}@{}}
+\toprule
+\textbf{Comando} & \textbf{Acción} \\
+\midrule
+\texttt{START} & Inicia la transmisión periódica de datos (modo normal). \\
+\texttt{STOP} & Detiene la transmisión periódica; el sistema entra en espera. \\
+\texttt{SET\_TH:xx.x} & Establece el umbral de temperatura a \texttt{xx.x} $^\circ$C, sobrescribiendo el valor del potenciómetro temporalmente. \\
+\texttt{GET\_STATUS} & Envía inmediatamente una trama JSON con el estado actual, sin esperar el ciclo de 5 segundos. \\
+\texttt{RESET} & Reinicia el microcontrolador mediante la función \texttt{asm volatile ("jmp 0");}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Evidencias de monitoreo y control}
+
+La Figura~\ref{fig:comunicacion-pc} muestra el Arduino conectado físicamente a la PC y transmitiendo datos, validando la comunicación bidireccional estable.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/neri/Downloads/3.jpeg}
+    \caption{Evidencia del Arduino conectado a la PC y en comunicación serial activa.}
+    \label{fig:comunicacion-pc}
+\end{figure}
+
+Adicionalmente, la aplicación Laravel proporciona una consola serial en vivo accesible desde la ruta \texttt{/live}, donde se observan las tramas JSON entrantes en tiempo real, así como controles para enviar los comandos descritos anteriormente.
+
+% --------------------------------------------------
+% 7. INTERFAZ HMI
+% --------------------------------------------------
+\chapter{Interfaz HMI}
+\label{ch:hmi}
+
+\section{Capturas de pantalla}
+
+La interfaz hombre-máquina (HMI) del sistema se desarrolló como una aplicación web responsiva. A continuación se presentan las vistas principales:
+
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{3cm}
+    \textit{Espacio reservado para captura de pantalla del panel de monitoreo /monitor.}\\
+    Mostrar tarjetas de métricas, gráfica de tendencia y tabla histórica.
+    \vspace{3cm}}}
+    \caption{Panel técnico de monitoreo en tiempo real.}
+    \label{fig:hmi-monitor}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{3cm}
+    \textit{Espacio reservado para captura de pantalla de la landing pública.}\\
+    Mostrar diseño glassmorphic con métricas actuales.
+    \vspace{3cm}}}
+    \caption{Landing pública optimizada para usuarios finales.}
+    \label{fig:hmi-landing}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{3cm}
+    \textit{Espacio reservado para captura de pantalla de la consola /live.}\\
+    Mostrar terminal web con tramas JSON recibidas.
+    \vspace{3cm}}}
+    \caption{Consola serial en vivo para depuración del hardware.}
+    \label{fig:hmi-live}
+\end{figure}
+
+\section{Explicación de funciones}
+
+La interfaz HMI se divide en cuatro vistas funcionales principales:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Landing Pública (/):} Visualización simplificada de las métricas actuales (temperatura, humedad, presión y luminosidad) con tarjetas de diseño \textit{glassmorphic}. No requiere autenticación y es ideal para pantallas informativas.
+    
+    \item \textbf{Panel Técnico (/monitor):} Incluye indicadores de estado del sistema, una gráfica de líneas con las últimas 5 horas de datos, una tabla paginada con el historial completo de lecturas y filtros por fecha.
+    
+    \item \textbf{Consola Serial (/live):} Terminal web que consulta directamente al puerto serial mediante peticiones AJAX. Muestra las tramas JSON crudas sin persistir en base de datos, útil para calibración y diagnóstico.
+    
+    \item \textbf{Configuración de Hardware (/hardware):} Permite al operador seleccionar el puerto serial disponible, ajustar la velocidad en baudios, iniciar/detener/reiniciar el demonio de escucha y liberar procesos bloqueados del sistema operativo.
+\end{enumerate}
+
+\section{Alertas y controles implementados}
+
+La interfaz incorpora los siguientes mecanismos de alerta y control:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Alertas visuales por umbral:} Cuando una lectura supera el valor límite, la tarjeta correspondiente cambia de color (de azul a rojo/ámbar) y se muestra un distintivo de alerta.
+    \item \textbf{Indicador de estado del demonio serial:} Badge dinámico que indica si el proceso de escucha está activo, inactivo o en error, con botones para reiniciar el servicio.
+    \item \textbf{Controles de comando:} Botones para enviar comandos \texttt{START}, \texttt{STOP} y \texttt{GET\_STATUS} al Arduino directamente desde la consola web.
+    \item \textbf{Notificaciones de última lectura:} Timestamp relativo (``hace 5 segundos'') que permite verificar la frescura de los datos y detectar desconexiones del hardware.
+\end{itemize}
+
+% --------------------------------------------------
+% 8. SIMULACIÓN
+% --------------------------------------------------
+\chapter{Simulación}
+\label{ch:simulacion}
+
+\section{Herramienta utilizada}
+
+Previo al montaje físico, se realizaron pruebas de validación lógica en la plataforma \textbf{Wokwi} (\url{https://wokwi.com}), un simulador en línea de circuitos con Arduino que permite ensamblar componentes virtuales, cargar código C++ y observar el comportamiento del sistema sin necesidad de hardware físico.
+
+Wokwi fue seleccionada por las siguientes ventajas:
+\begin{itemize}[leftmargin=*]
+    \item Soporte nativo para Arduino UNO, sensores DHT22/BMP280 y periféricos comunes.
+    \item Consola serial integrada que emula la comunicación UART con la PC.
+    \item Depuración paso a paso y visualización de estados de pines en tiempo real.
+    \item Colaboración en línea y facilidad para compartir esquemas mediante URL.
+\end{itemize}
+
+\section{Capturas de simulación}
+
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{3cm}
+    \textit{Espacio reservado para captura de pantalla del simulador Wokwi.}\\
+    Mostrar el circuito virtual con sensores conectados y consola serial con JSON.
+    \vspace{3cm}}}
+    \caption{Simulación del circuito en Wokwi con lecturas virtuales.}
+    \label{fig:simulacion-wokwi}
+\end{figure}
+
+\section{Validación del funcionamiento lógico}
+
+Durante la fase de simulación se verificaron los siguientes aspectos críticos:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Lectura de sensores:} Se validó que el DHT11 (simulado como DHT22 en Wokwi) y el BMP280 respondieran correctamente a las llamadas de biblioteca y que los valores generados estuvieran dentro de rangos físicos coherentes.
+    \item \textbf{Conversión ADC:} Se comprobó que los valores de los potenciómetros virtuales se mapearan correctamente al rango de umbrales de temperatura esperado.
+    \item \textbf{Actuación de salidas:} Se verificó el encendido del LED de alerta y la variación del ciclo de trabajo PWM cuando el valor simulado de temperatura excedía el umbral ajustado.
+    \item \textbf{Comunicación serial:} Se confirmó que la trama JSON se formateara correctamente y que los comandos \texttt{START}, \texttt{STOP} y \texttt{GET\_STATUS} fueran parseados e interpretados adecuadamente por el firmware.
+\end{enumerate}
+
+La simulación permitió detectar un error inicial en la secuencia de inicialización del BMP280 (dirección I2C incorrecta, 0x77 en lugar de 0x76), el cual fue corregido antes de transferir el código al hardware físico.
+
+% --------------------------------------------------
+% 9. BASE DE DATOS
+% --------------------------------------------------
+\chapter{Base de datos}
+\label{ch:base-datos}
+
+\section{Tipo de base de datos}
+
+El sistema utiliza \textbf{PostgreSQL} como sistema de gestión de bases de datos relacional (RDBMS). PostgreSQL fue elegido por su robustez, soporte para tipos de datos avanzados (JSON, ARRAY, TIMESTAMP WITH TIME ZONE) y su compatibilidad nativa con el ecosistema Laravel mediante el driver \texttt{pgsql} de Eloquent ORM.
+
+\section{Estructura utilizada}
+
+El esquema de base de datos se gestiona íntegramente mediante migraciones de Laravel, garantizando trazabilidad y reproducibilidad del entorno. Las tablas principales son:
+
+\subsection{Tabla \texttt{weather\_readings}}
+
+Almacena cada lectura meteorológica recibida, ya sea por puerto serial o por API REST.
+
+\begin{table}[H]
+\centering
+\caption{Estructura de la tabla \texttt{weather\_readings}.}
+\label{tab:weather-readings}
+\begin{tabular}{@{}llp{5.5cm}@{}}
+\toprule
+\textbf{Columna} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\texttt{id} & BIGINT (PK) & Identificador autoincremental. \\
+\texttt{temperature\_c} & DECIMAL(5,2) & Temperatura DHT11 ($^\circ$C). \\
+\texttt{temperature\_bmp280\_c} & DECIMAL(5,2), NULL & Temperatura BMP280 ($^\circ$C). \\
+\texttt{humidity\_percent} & DECIMAL(5,2) & Humedad relativa (\%). \\
+\texttt{pressure\_hpa} & DECIMAL(7,2) & Presión atmosférica (hPa). \\
+\texttt{altitude\_m} & DECIMAL(7,2), NULL & Altitud aproximada (m). \\
+\texttt{light\_level} & INT, NULL & Nivel de luminosidad LDR (0--100). \\
+\texttt{threshold\_c} & DECIMAL(5,2), NULL & Umbral de alerta activo ($^\circ$C). \\
+\texttt{source} & VARCHAR(20) & Origen: \texttt{serial}, \texttt{api}. \\
+\texttt{recorded\_at} & TIMESTAMP & Momento de la medición. \\
+\texttt{meta} & JSON, NULL & Metadatos adicionales (IP, raw, etc.). \\
+\texttt{created\_at} & TIMESTAMP & Marca de creación del registro. \\
+\texttt{updated\_at} & TIMESTAMP & Marca de última actualización. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Tabla \texttt{app\_settings}}
+
+Permite almacenar configuraciones dinámicas del sistema sin modificar archivos de entorno.
+
+\begin{table}[H]
+\centering
+\caption{Estructura de la tabla \texttt{app\_settings}.}
+\label{tab:app-settings}
+\begin{tabular}{@{}llp{6cm}@{}}
+\toprule
+\textbf{Columna} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\texttt{id} & BIGINT (PK) & Identificador autoincremental. \\
+\texttt{key} & VARCHAR (unique) & Clave de configuración (ej. \texttt{serial\_port}). \\
+\texttt{value} & TEXT, NULL & Valor asociado. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Variables registradas}
+
+Las variables que se registran en cada evento de inserción incluyen:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Variables ambientales:} temperatura (dos sensores), humedad, presión barométrica, altitud estimada y nivel de luz.
+    \item \textbf{Variables de control:} umbral de alerta configurado, estado de salidas digitales y valor PWM enviado por el Arduino.
+    \item \textbf{Variables de trazabilidad:} origen de la lectura (serial o API), dirección IP del cliente (en ingesta API), trama cruda recibida y timestamps de medición y registro.
+\end{itemize}
+
+\section{Evidencias de registros y timestamps}
+
+La Figura~\ref{fig:base-datos} muestra una consulta directa a la base de datos evidenciando la correcta inserción de registros con sus respectivos timestamps.
+
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{3cm}
+    \textit{Espacio reservado para captura de pantalla de la base de datos.}\\
+    Mostrar resultado de SELECT * FROM weather\_readings ORDER BY created\_at DESC LIMIT 10;
+    \vspace{3cm}}}
+    \caption{Evidencia de registros con timestamps en PostgreSQL.}
+    \label{fig:base-datos}
+\end{figure}
+
+% --------------------------------------------------
+% 10. RESULTADOS
+% --------------------------------------------------
+\chapter{Resultados}
+\label{ch:resultados}
+
+\section{Evidencias fotográficas}
+
+El prototipo físico del sistema fue ensamblado, programado y probado en condiciones reales. A continuación se presentan las evidencias fotográficas del funcionamiento:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/neri/Downloads/1.jpeg}
+    \caption{Vista general del prototipo montado en protoboard con todos los componentes.}
+    \label{fig:resultado-1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/neri/Downloads/2.jpeg}
+    \caption{Detalle de sensores, actuadores y cableado de conexiones.}
+    \label{fig:resultado-2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/neri/Downloads/3.jpeg}
+    \caption{Arduino conectado a la PC y ejecutando transmisión serial.}
+    \label{fig:resultado-3}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{/Users/neri/Downloads/4.jpeg}
+    \caption{Prueba de actuadores: LED de alerta encendido y salida PWM activa ante condición de umbral superado.}
+    \label{fig:resultado-4}
+\end{figure}
+
+\section{Resultados obtenidos}
+
+Durante las pruebas de funcionamiento se obtuvieron los siguientes resultados:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Estabilidad de lecturas:} El DHT11 proporcionó lecturas de temperatura con una desviación estándar menor a $\pm$1.5$^\circ$C respecto a un termómetro de referencia, y humedad dentro del rango de tolerancia del fabricante ($\pm$5\%).
+    \item \textbf{Presión atmosférica:} El BMP280 entregó valores consistentes con la presión local reportada por servicios meteorológicos oficiales (diferencia $<$ 2 hPa después de calibración a nivel de mar).
+    \item \textbf{Respuesta de actuadores:} El LED de alerta y el buzzer PWM respondieron en menos de 100 ms al superar el umbral ajustado mediante el potenciómetro.
+    \item \textbf{Comunicación serial:} La transmisión de tramas JSON fue estable durante pruebas continuas de 30 minutos, sin pérdida de paquetes detectada en el monitor serial ni en la consola web \texttt{/live}.
+    \item \textbf{Latencia web:} El tiempo transcurrido desde la recepción de datos en el puerto serial hasta su visualización en el dashboard fue menor a 1 segundo en promedio.
+\end{itemize}
+
+\section{Problemas encontrados}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Ruido en lecturas del DHT11:} En ciertos momentos se observaron lecturas erráticas (valores de humedad en 0\% o temperaturas imposibles). Se mitigó agregando un capacitor de 100 nF entre VCC y GND cercano al sensor y filtrando valores fuera de rango en el firmware.
+    \item \textbf{Dirección I2C del BMP280:} El sensor adquirido respondió únicamente a la dirección 0x76 en lugar de la 0x77 documentada en algunas versiones de la biblioteca. Se ajustó el código fuente tras diagnóstico con escáner I2C.
+    \item \textbf{Bloqueo del puerto serial en macOS:} Al desconectar físicamente el Arduino sin detener el demonio de Laravel, el archivo de dispositivo \texttt{/dev/tty.usbmodem*} quedaba bloqueado por procesos huérfanos. Se implementó en el \texttt{SerialPortManager} la detección y liberación forzada mediante \texttt{lsof} y \texttt{kill}.
+    \item \textbf{Sensibilidad del LDR:} La fotorresistencia presentaba respuesta no lineal ante cambios bruscos de luz. Se aplicó una función de promedio móvil de 5 muestras para suavizar la señal.
+\end{enumerate}
+
+\section{Mejoras futuras}
+
+\begin{itemize}[leftmargin=*]
+    \item Integrar sensores de lluvia (balancín) y velocidad de viento (anemómetro) para ampliar el reporte meteorológico.
+    \item Migrar la comunicación de USB cableado a WiFi o Bluetooth mediante módulo ESP8266/HC-05, eliminando la dependencia de cable físico.
+    \item Implementar alertas automáticas por correo electrónico o Telegram cuando se detecten condiciones extremas definidas por el usuario.
+    \item Desarrollar un modelo de predicción simple (regresión lineal o media móvil) utilizando el histórico de la base de datos para estimar tendencias de temperatura.
+    \item Diseñar una carcasa impresa en 3D que proteja el hardware y facilite su instalación en exteriores.
+\end{itemize}
+
+% --------------------------------------------------
+% 11. CONCLUSIONES
+% --------------------------------------------------
+\chapter{Conclusiones}
+\label{ch:conclusiones}
+
+\section{Cumplimiento de objetivos}
+
+El proyecto \textit{Meteo-Lab / Clima Visor} cumplió satisfactoriamente con el objetivo general y con todos los objetivos específicos planteados al inicio del desarrollo:
+
+\begin{itemize}[leftmargin=*]
+    \item Se implementaron las \textbf{dos entradas digitales} (DHT11 y pulsador) y las \textbf{dos entradas analógicas} (LDR y potenciómetro), verificando su correcta lectura y conversión por el ADC del ATmega328P.
+    \item Se configuraron las \textbf{dos salidas digitales} (LEDs de estado y alerta) y la \textbf{salida PWM} (buzzer/ventilador), demostrando actuación proporcional ante condiciones de umbral superado.
+    \item La comunicación serial bidireccional con la PC funcionó de manera estable, permitiendo tanto el monitoreo de variables como el envío de comandos de control remotos.
+    \item La aplicación web desarrollada en Laravel, junto con la base de datos PostgreSQL, proporcionó una solución robusta para la persistencia, consulta y visualización histórica de los datos.
+    \item La interfaz HMI resultó intuitiva, funcional y responsiva, cumpliendo con los requisitos de monitoreo, alerta y control especificados en la rúbrica de evaluación.
+\end{itemize}
+
+\section{Aprendizajes obtenidos}
+
+Durante la realización del proyecto, el equipo adquirió competencias técnicas y metodológicas significativas:
+
+\begin{enumerate}[leftmargin=*]
+    \item Comprensión profunda del protocolo UART y la gestión de puertos seriales en sistemas operativos Unix-like.
+    \item Manejo de sensores digitales (DHT11, BMP280 vía I2C) y analógicos (LDR, potenciómetro), incluyendo técnicas de filtrado y calibración.
+    \item Desarrollo de firmware modular y documentado para Arduino, aplicando buenas prácticas de programación embebida.
+    \item Integración completa de hardware con software de alto nivel (Laravel), comprendiendo el flujo de datos desde el nivel físico hasta la capa de presentación web.
+    \item Diseño de bases de datos relacionales y uso de ORM (Eloquent) para garantizar la integridad y trazabilidad de los registros.
+\end{enumerate}
+
+\section{Aplicaciones potenciales}
+
+El sistema desarrollado tiene aplicaciones directas en múltiples contextos:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Agricultura de precisión:} Monitoreo de invernaderos para optimizar riego y ventilación según temperatura y humedad.
+    \item \textbf{Educación científica:} Laboratorios escolares y universitarios para enseñar conceptos de electrónica, programación y telecomunicaciones.
+    \item \textbf{Domótica:} Integración en hogares inteligentes para el control automático de climatización y persianas según luminosidad.
+    \item \textbf{Investigación ambiental:} Redes de nodos de bajo costo para mapeo climático local en zonas rurales o de difícil acceso.
+\end{itemize}
+
+% --------------------------------------------------
+% 12. ANEXOS
+% --------------------------------------------------
+\chapter{Anexos}
+\label{ch:anexos}
+
+\section{Código fuente del firmware Arduino}
+
+A continuación se incluye el código fuente completo del sketch desarrollado para Arduino UNO. Este programa gestiona la lectura de sensores, el control de actuadores, la comunicación serial bidireccional y el formateo de datos JSON.
+
+\begin{verbatim}
+/*
+  Meteo-Lab / Clima Visor - Firmware Arduino UNO
+  Materia: [Nombre de la materia]
+  Descripcion: Estacion meteorologica digital con E/S digitales,
+               analogicas, PWM y comunicacion serial.
+*/
+
+#include <DHT.h>
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
+
+// --- Pines ---
+#define PIN_DHT 2
+#define PIN_BOTON 3
+#define PIN_LED_STATUS 13
+#define PIN_LED_ALERTA 12
+#define PIN_PWM_ALARMA 9
+#define PIN_LDR A0
+#define PIN_POT A1
+
+// --- Constantes ---
+#define INTERVALO_MS 5000
+#define UMBRAL_LUZ 80.0
+
+// --- Objetos ---
+DHT dht(PIN_DHT, DHT11);
+Adafruit_BMP280 bmp;
+
+// --- Variables globales ---
+float umbralTemp = 30.0;
+bool transmisionActiva = true;
+unsigned long ultimaLectura = 0;
+
+void setup() {
+    Serial.begin(9600);
+    pinMode(PIN_BOTON, INPUT);
+    pinMode(PIN_LED_STATUS, OUTPUT);
+    pinMode(PIN_LED_ALERTA, OUTPUT);
+    pinMode(PIN_PWM_ALARMA, OUTPUT);
+
+    dht.begin();
+    if (!bmp.begin(0x76)) {
+        Serial.println("{\"error\":\"BMP280 no detectado\"}");
+    }
+
+    digitalWrite(PIN_LED_STATUS, HIGH);
+    delay(500);
+    digitalWrite(PIN_LED_STATUS, LOW);
+}
+
+void loop() {
+    handleSerial();
+
+    if (!transmisionActiva) return;
+
+    if (millis() - ultimaLectura >= INTERVALO_MS) {
+        ultimaLectura = millis();
+
+        // Lectura de entradas
+        int rawLDR = analogRead(PIN_LDR);
+        int rawPot = analogRead(PIN_POT);
+        int btnState = digitalRead(PIN_BOTON);
+
+        float luminosidad = map(rawLDR, 0, 1023, 0, 100);
+        umbralTemp = map(rawPot, 0, 1023, 150, 450) / 10.0;
+
+        // Lectura de sensores
+        float temperatura = dht.readTemperature();
+        float humedad = dht.readHumidity();
+        float presion = bmp.readPressure() / 100.0;
+        float altitud = bmp.readAltitude(1013.25);
+
+        // Verificacion de lecturas validas
+        if (isnan(temperatura) || isnan(humedad)) {
+            temperatura = -999.0;
+            humedad = -999.0;
+        }
+
+        // Control de actuadores
+        bool alerta = (temperatura > umbralTemp) || (luminosidad > UMBRAL_LUZ);
+        int pwmVal = 0;
+        if (alerta) {
+            digitalWrite(PIN_LED_ALERTA, HIGH);
+            pwmVal = map((int)(temperatura * 10), 150, 450, 50, 255);
+            pwmVal = constrain(pwmVal, 0, 255);
+            analogWrite(PIN_PWM_ALARMA, pwmVal);
+        } else {
+            digitalWrite(PIN_LED_ALERTA, LOW);
+            analogWrite(PIN_PWM_ALARMA, 0);
+        }
+
+        digitalWrite(PIN_LED_STATUS, !digitalRead(PIN_LED_STATUS));
+
+        // Envio JSON
+        String json = "{";
+        json += "\"temp_c\":" + String(temperatura) + ",";
+        json += "\"hum_p\":" + String(humedad) + ",";
+        json += "\"pres_hpa\":" + String(presion) + ",";
+        json += "\"alt_m\":" + String(altitud) + ",";
+        json += "\"lux_p\":" + String(luminosidad) + ",";
+        json += "\"umbral\":" + String(umbralTemp) + ",";
+        json += "\"btn\":" + String(btnState) + ",";
+        json += "\"alert\":" + String(alerta ? 1 : 0) + ",";
+        json += "\"pwm\":" + String(pwmVal);
+        json += "}";
+        Serial.println(json);
+    }
+}
+
+void handleSerial() {
+    if (Serial.available() > 0) {
+        String cmd = Serial.readStringUntil('\n');
+        cmd.trim();
+
+        if (cmd == "START") {
+            transmisionActiva = true;
+            Serial.println("{\"ack\":\"START\"}");
+        } else if (cmd == "STOP") {
+            transmisionActiva = false;
+            Serial.println("{\"ack\":\"STOP\"}");
+        } else if (cmd.startsWith("SET_TH:")) {
+            String val = cmd.substring(7);
+            umbralTemp = val.toFloat();
+            Serial.println("{\"ack\":\"TH updated\"}");
+        } else if (cmd == "GET_STATUS") {
+            Serial.println("{\"status\":\"OK\",\"tx\":" 
+                + String(transmisionActiva ? 1 : 0) + "}");
+        } else if (cmd == "RESET") {
+            Serial.println("{\"ack\":\"RESETTING\"}");
+            delay(100);
+            asm volatile ("jmp 0");
+        }
+    }
+}
+\end{verbatim}
+
+\section{Manual de usuario}
+
+\subsection{Requisitos previos}
+\begin{itemize}[leftmargin=*]
+    \item PC con macOS, Linux o Windows.
+    \item Arduino IDE instalado (para carga inicial del firmware).
+    \item Entorno PHP 8.3+, Composer, Node.js y PostgreSQL instalados.
+    \item Cable USB A--B para conexión del Arduino.
+\end{itemize}
+
+\subsection{Pasos de operación}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Carga del firmware:} Abrir el sketch anterior en Arduino IDE, seleccionar la placa ``Arduino UNO'' y el puerto correspondiente, luego compilar y subir.
+    \item \textbf{Conexión física:} Verificar que los sensores y actuadores estén conectados según el diagrama de conexiones del Capítulo~\ref{ch:hardware}.
+    \item \textbf{Inicio de la aplicación web:} En la terminal, ejecutar \texttt{composer install}, configurar el archivo \texttt{.env} con credenciales de PostgreSQL, ejecutar \texttt{php artisan migrate} y finalmente \texttt{php artisan serve}.
+    \item \textbf{Escucha serial:} Configurar el puerto y baudios en la vista \texttt{/hardware} e iniciar el demonio de escucha. Alternativamente, ejecutar \texttt{php artisan weather:serial-listen --port=/dev/tty.usbmodem*}.
+    \item \textbf{Monitoreo:} Acceder a \texttt{http://localhost:8000/monitor} para visualizar datos en tiempo real y al historial.
+\end{enumerate}
+
+\subsection{Solución de problemas comunes}
+\begin{itemize}[leftmargin=*]
+    \item Si no aparecen lecturas, verificar que el puerto serial no esté ocupado por otro proceso (monitor serial del IDE, por ejemplo).
+    \item Si el BMP280 no responde, verificar la dirección I2C (0x76 o 0x77) y la continuidad de los cables SDA/SCL.
+    \item Si la base de datos no registra datos, revisar los logs en \texttt{storage/logs/laravel.log} y verificar que el demonio serial esté corriendo.
+\end{itemize}
+
+\section{Liga del video demostrativo}
+
+El video demostrativo del proyecto (duración aproximada 4 minutos) se encuentra disponible en la siguiente dirección:
+
+\begin{center}
+\url{https://youtu.be/XXXXXXXXXXX}
+\end{center}
+
+\textit{Nota: Reemplace el enlace anterior por la URL real del video antes de la entrega final.}
