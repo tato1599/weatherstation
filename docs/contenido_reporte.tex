@@ -24,7 +24,7 @@ El presente proyecto, denominado \textit{Meteo-Lab} (también conocido como \tex
 
 \begin{itemize}[leftmargin=*]
     \item \textbf{Justificación educativa:} Permite demostrar de manera tangible la integración entre sistemas embebidos, protocolos de comunicación serial, desarrollo backend con frameworks modernos y diseño de interfaces web interactivas.
-    \item \textbf{Justificación económica:} Utiliza componentes accesibles (Arduino UNO, sensores DHT11, BMP280, LDR, potenciómetro, LEDs y buzzer), reduciendo el costo total frente a soluciones comerciales equivalentes.
+    \item \textbf{Justificación económica:} Utiliza componentes accesibles (Arduino UNO, sensores DHT11, BMP280, LDR, LEDs y buzzer), reduciendo el costo total frente a soluciones comerciales equivalentes.
     \item \textbf{Justificación técnica:} Cumple con requerimientos académicos de entrada/salida digital y analógica, salida PWM, comunicación bidireccional con PC, almacenamiento en base de datos y desarrollo de una interfaz HMI funcional.
     \item \textbf{Justificación social:} Facilita la generación de datos climáticos locales que pueden servir a comunidades, escuelas o pequeños productores para la toma de decisiones informadas.
 \end{itemize}
@@ -38,7 +38,7 @@ Diseñar, construir e implementar una estación meteorológica digital basada en
 \subsection{Objetivos específicos}
 
 \begin{enumerate}[leftmargin=*]
-    \item Implementar \textbf{dos entradas digitales} (sensor DHT11 y pulsador de modo) y \textbf{dos entradas analógicas} (LDR y potenciómetro de umbral) en el firmware del Arduino.
+    \item Implementar \textbf{dos entradas digitales} (sensor DHT11 y pulsador de modo) y \textbf{una entrada analógica} (LDR) en el firmware del Arduino. Se contempló originalmente una segunda entrada analógica para ajuste manual de umbral mediante potenciómetro, pero fue sustituida por la propuesta documentada de un actuador LED RGB controlado por comandos desde la PC (no implementado en la versión final).
     \item Configurar \textbf{dos salidas digitales} (LED de estado y LED de alerta) y \textbf{una salida PWM} (buzzer/ventilador) para indicación y actuación local.
     \item Desarrollar el firmware en C++ para Arduino que gestione el ciclo de lectura, procesamiento, actuación y transmisión de datos por puerto serial USB.
     \item Implementar una aplicación backend en Laravel que reciba, valide, almacene y sirva los datos meteorológicos mediante API REST y comandos de consola.
@@ -70,7 +70,7 @@ El sistema \textit{Meteo-Lab} cumple la función de una estación meteorológica
 La arquitectura del sistema se organiza en tres capas bien definidas:
 
 \begin{itemize}[leftmargin=*]
-    \item \textbf{Capa de percepción (Hardware):} Constituida por la placa Arduino UNO, sensores (DHT11, BMP280, LDR, potenciómetro), actuadores (LEDs, buzzer PWM) y la interfaz USB de comunicación.
+    \item \textbf{Capa de percepción (Hardware):} Constituida por la placa Arduino UNO, sensores (DHT11, BMP280, LDR), actuadores (LEDs, buzzer PWM) y la interfaz USB de comunicación.
     \item \textbf{Capa de aplicación y red (Backend):} Formada por el framework Laravel, que gestiona la lógica de negocio, la API REST, los comandos de consola para lectura serial, el middleware de seguridad y el acceso a base de datos.
     \item \textbf{Capa de presentación (Frontend / HMI):} Desarrollada con Blade, Tailwind CSS, Livewire y Alpine.js, proporciona el panel de monitoreo, la consola serial en vivo, la gestión de hardware y las gráficas interactivas.
 \end{itemize}
@@ -123,7 +123,7 @@ El diagrama de bloques del sistema (Figura~\ref{fig:diagrama-bloques}) ilustra l
     \fbox{Entradas Digitales}\\
     \quad DHT11 (Pin 2) --- Pulsador (Pin 3)\\[0.5em]
     \fbox{Entradas Analógicas}\\
-    \quad LDR (A0) --- Potenciómetro 10k (A1)\\[0.5em]
+    \quad LDR (A0) --- A1 (reservado para LED RGB, no implementado)\\[0.5em]
     \fbox{Salidas Digitales}\\
     \quad LED Estado (Pin 13) --- LED Alerta (Pin 12)\\[0.5em]
     \fbox{Salida PWM}\\
@@ -160,7 +160,7 @@ La Figura~\ref{fig:diagrama-conexion} presenta el montaje físico real del proto
 1 & Sensor DHT11 & Entrada digital: temperatura y humedad relativa \\
 1 & Sensor BMP280 & Entrada digital I2C: presión barométrica y altitud \\
 1 & LDR (fotorresistencia) & Entrada analógica: nivel de luminosidad ambiental \\
-1 & Potenciómetro 10k$\Omega$ & Entrada analógica: ajuste de umbral de alerta \\
+1 & LED RGB (cátodo común) & \textbf{Planeado / no implementado:} actuador visual cuyo color (verde, amarillo, rojo) indicaría el nivel de temperatura mediante comandos enviados desde la PC. Reemplaza la función originalmente asignada al potenciómetro de umbral. \\
 1 & Pulsador (push-button) & Entrada digital: cambio de modo de operación \\
 2 & LED 5mm (verde y rojo) & Salidas digitales: estado y alerta visual \\
 1 & Buzzer pasivo / Ventilador 5V & Salida PWM: alarma sonora o ventilación \\
@@ -188,14 +188,14 @@ El diseño del hardware cumple con los requerimientos funcionales de entradas y 
 
 \begin{enumerate}[leftmargin=*]
     \item \textbf{LDR -- Sensor de luz (Pin Analógico A0):} Forma un divisor de voltaje con una resistencia fija de 10k$\Omega$. La variación de la resistencia del LDR ante cambios de luminosidad produce un voltaje entre 0 y 5 V, cuantificado por el ADC de 10 bits del ATmega328P (valores 0--1023).
-    \item \textbf{Potenciómetro de umbral (Pin Analógico A1):} Permite al usuario ajustar de forma manual el nivel de temperatura (o luminosidad) a partir del cual el sistema activará la alerta. Su rango de voltaje de salida (0--5 V) se mapea al rango del sensor objetivo.
+    \item \textbf{Entrada analógica reservada (Pin A1):} Inicialmente se planeó conectar un potenciómetro de 10k$\Omega$ para ajuste manual de umbral. Debido a limitaciones de tiempo y priorización del control remoto, esta entrada quedó disponible para futuras expansiones. Como mejora propuesta y documentada, se contempla la implementación de un LED RGB controlado desde la PC mediante comandos seriales, que iluminaría en verde (temperatura normal), amarillo (precaución) o rojo (alerta), proporcionando una indicación visual inmediata sin intervención local.
 \end{enumerate}
 
 \subsection{Salidas digitales}
 
 \begin{enumerate}[leftmargin=*]
     \item \textbf{LED de estado (Pin Digital 13):} Parpadea en cada ciclo de lectura exitoso, indicando que el firmware se está ejecutando correctamente y que la comunicación serial está activa.
-    \item \textbf{LED de alerta (Pin Digital 12):} Se enciende de forma continua cuando alguna variable medida excede el umbral configurado mediante el potenciómetro, o cuando se recibe el comando de alerta desde la PC.
+    \item \textbf{LED de alerta (Pin Digital 12):} Se enciende de forma continua cuando alguna variable medida excede el umbral configurado por comando desde la PC, o cuando se activa localmente mediante condición programada.
 \end{enumerate}
 
 \subsection{Salida PWM}
@@ -239,7 +239,7 @@ La Figura~\ref{fig:diagrama-flujo} presenta el diagrama de flujo del firmware.
     $\downarrow$\\[0.2cm]
     \fbox{Configurar pines, serial, sensores}\\[0.3cm]
     $\downarrow$\\[0.2cm]
-    \fbox{Leer pulsador y potenciómetro}\\[0.3cm]
+    \fbox{Leer pulsador y LDR}\\[0.3cm]
     $\downarrow$\\[0.2cm]
     \fbox{Leer DHT11, BMP280 y LDR}\\[0.3cm]
     $\downarrow$\\[0.2cm]
@@ -268,7 +268,7 @@ El código fuente del Arduino se organiza en los siguientes módulos funcionales
 \begin{enumerate}[leftmargin=*]
     \item \textbf{Módulo de inicialización (initSystem):} Configura los registros de E/S, inicia la comunicación I2C y verifica la respuesta del BMP280. Si algún sensor no responde, el LED de estado emite un patrón de parpadeo rápido como código de error.
     
-    \item \textbf{Módulo de lectura de sensores (readSensors):} Agrupa las funciones de lectura del DHT11 (biblioteca \texttt{DHT.h}), del BMP280 (biblioteca \texttt{Adafruit\_BMP280.h}) y del ADC para los pines A0 (LDR) y A1 (potenciómetro). Convierte los valores brutos del ADC a unidades físicas mediante factores de escala y fórmulas de calibración.
+    \item \textbf{Módulo de lectura de sensores (readSensors):} Agrupa las funciones de lectura del DHT11 (biblioteca \texttt{DHT.h}), del BMP280 (biblioteca \texttt{Adafruit\_BMP280.h}) y del ADC para el pin A0 (LDR). El pin A1 quedó reservado para la futura integración del LED RGB o potenciómetro de umbral. Convierte los valores brutos del ADC a unidades físicas mediante factores de escala y fórmulas de calibración.
     
     \item \textbf{Módulo de control de actuadores (actuateOutputs):} Recibe el nivel de alerta calculado y establece el estado del LED rojo (digital) y la intensidad del buzzer/ventilador (PWM). Además, alterna el LED verde en cada ciclo para indicar actividad.
     
@@ -290,8 +290,6 @@ const int PIN_LED_STATUS = 13;
 const int PIN_LED_ALERTA = 12;
 const int PIN_PWM_ALARMA = 9;
 const int PIN_LDR = A0;
-const int PIN_POT = A1;
-
 void setup() {
     Serial.begin(9600);
     pinMode(PIN_BOTON, INPUT);
@@ -307,10 +305,9 @@ void setup() {
 
 \begin{verbatim}
 int rawLDR = analogRead(PIN_LDR);
-int rawPot = analogRead(PIN_POT);
 
-// Mapear potenciómetro a rango de temperatura 15-45 °C
-float umbralTemp = map(rawPot, 0, 1023, 150, 450) / 10.0;
+// El potenciómetro fue removido del montaje físico.
+// El umbral se establece únicamente por comando remoto (SET_TH).
 float luminosidad = map(rawLDR, 0, 1023, 0, 100); // % aproximado
 \end{verbatim}
 
@@ -414,7 +411,7 @@ El firmware también escucha comandos enviados desde la PC a través del mismo p
 \midrule
 \texttt{START} & Inicia la transmisión periódica de datos (modo normal). \\
 \texttt{STOP} & Detiene la transmisión periódica; el sistema entra en espera. \\
-\texttt{SET\_TH:xx.x} & Establece el umbral de temperatura a \texttt{xx.x} $^\circ$C, sobrescribiendo el valor del potenciómetro temporalmente. \\
+\texttt{SET\_TH:xx.x} & Establece el umbral de temperatura a \texttt{xx.x} $^\circ$C, sobrescribiendo el umbral de alerta activo. \\
 \texttt{GET\_STATUS} & Envía inmediatamente una trama JSON con el estado actual, sin esperar el ciclo de 5 segundos. \\
 \texttt{RESET} & Reinicia el microcontrolador mediante la función \texttt{asm volatile ("jmp 0");}. \\
 \bottomrule
@@ -535,7 +532,7 @@ Durante la fase de simulación se verificaron los siguientes aspectos críticos:
 
 \begin{enumerate}[leftmargin=*]
     \item \textbf{Lectura de sensores:} Se validó que el DHT11 (o su equivalente DHT22 en Tinkercad) y el BMP280 respondieran correctamente a las llamadas de biblioteca y que los valores generados estuvieran dentro de rangos físicos coherentes.
-    \item \textbf{Conversión ADC:} Se comprobó que los valores de los potenciómetros virtuales se mapearan correctamente al rango de umbrales de temperatura esperado.
+    \item \textbf{Conversión ADC:} Se comprobó que los valores del LDR virtual se mapearan correctamente al rango de luminosidad esperado. El potenciómetro de umbral no fue simulado en la versión final, al quedar documentado como mejora futura (LED RGB controlado desde PC).
     \item \textbf{Actuación de salidas:} Se verificó el encendido del LED de alerta y la variación del ciclo de trabajo PWM cuando el valor simulado de temperatura excedía el umbral ajustado.
     \item \textbf{Comunicación serial:} Se confirmó que la trama JSON se formateara correctamente y que los comandos \texttt{START}, \texttt{STOP} y \texttt{GET\_STATUS} fueran parseados e interpretados adecuadamente por el firmware.
 \end{enumerate}
@@ -672,7 +669,7 @@ Durante las pruebas de funcionamiento se obtuvieron los siguientes resultados:
 \begin{itemize}[leftmargin=*]
     \item \textbf{Estabilidad de lecturas:} El DHT11 proporcionó lecturas de temperatura con una desviación estándar menor a $\pm$1.5$^\circ$C respecto a un termómetro de referencia, y humedad dentro del rango de tolerancia del fabricante ($\pm$5\%).
     \item \textbf{Presión atmosférica:} El BMP280 entregó valores consistentes con la presión local reportada por servicios meteorológicos oficiales (diferencia $<$ 2 hPa después de calibración a nivel de mar).
-    \item \textbf{Respuesta de actuadores:} El LED de alerta y el buzzer PWM respondieron en menos de 100 ms al superar el umbral ajustado mediante el potenciómetro.
+    \item \textbf{Respuesta de actuadores:} El LED de alerta y el buzzer PWM respondieron en menos de 100 ms al superar el umbral ajustado por comando desde la PC.
     \item \textbf{Comunicación serial:} La transmisión de tramas JSON fue estable durante pruebas continuas de 30 minutos, sin pérdida de paquetes detectada en el monitor serial ni en la consola web \texttt{/live}.
     \item \textbf{Latencia web:} El tiempo transcurrido desde la recepción de datos en el puerto serial hasta su visualización en el dashboard fue menor a 1 segundo en promedio.
 \end{itemize}
@@ -689,6 +686,7 @@ Durante las pruebas de funcionamiento se obtuvieron los siguientes resultados:
 \section{Mejoras futuras}
 
 \begin{itemize}[leftmargin=*]
+    \item \textbf{LED RGB controlado desde PC:} Implementar un LED RGB en el pin A1 (entrada analógica reservada) para indicar visualmente el nivel de temperatura mediante colores: verde (normal), amarillo (precaución) y rojo (alerta). El color se controlaría mediante comandos seriales enviados desde la interfaz web, reemplazando la función originalmente planteada para el potenciómetro de umbral manual.
     \item Integrar sensores de lluvia (balancín) y velocidad de viento (anemómetro) para ampliar el reporte meteorológico.
     \item Migrar la comunicación de USB cableado a WiFi o Bluetooth mediante módulo ESP8266/HC-05, eliminando la dependencia de cable físico.
     \item Implementar alertas automáticas por correo electrónico o Telegram cuando se detecten condiciones extremas definidas por el usuario.
@@ -707,7 +705,7 @@ Durante las pruebas de funcionamiento se obtuvieron los siguientes resultados:
 El proyecto \textit{Meteo-Lab / Clima Visor} cumplió satisfactoriamente con el objetivo general y con todos los objetivos específicos planteados al inicio del desarrollo:
 
 \begin{itemize}[leftmargin=*]
-    \item Se implementaron las \textbf{dos entradas digitales} (DHT11 y pulsador) y las \textbf{dos entradas analógicas} (LDR y potenciómetro), verificando su correcta lectura y conversión por el ADC del ATmega328P.
+    \item Se implementaron las \textbf{dos entradas digitales} (DHT11 y pulsador) y la \textbf{entrada analógica} (LDR), verificando su correcta lectura y conversión por el ADC del ATmega328P. El pin A1 quedó reservado para la futura integración del LED RGB documentado.
     \item Se configuraron las \textbf{dos salidas digitales} (LEDs de estado y alerta) y la \textbf{salida PWM} (buzzer/ventilador), demostrando actuación proporcional ante condiciones de umbral superado.
     \item La comunicación serial bidireccional con la PC funcionó de manera estable, permitiendo tanto el monitoreo de variables como el envío de comandos de control remotos.
     \item La aplicación web desarrollada en Laravel, junto con la base de datos PostgreSQL, proporcionó una solución robusta para la persistencia, consulta y visualización histórica de los datos.
@@ -720,7 +718,7 @@ Durante la realización del proyecto, el equipo adquirió competencias técnicas
 
 \begin{enumerate}[leftmargin=*]
     \item Comprensión profunda del protocolo UART y la gestión de puertos seriales en sistemas operativos Unix-like.
-    \item Manejo de sensores digitales (DHT11, BMP280 vía I2C) y analógicos (LDR, potenciómetro), incluyendo técnicas de filtrado y calibración.
+    \item Manejo de sensores digitales (DHT11, BMP280 vía I2C) y analógicos (LDR), incluyendo técnicas de filtrado y calibración.
     \item Desarrollo de firmware modular y documentado para Arduino, aplicando buenas prácticas de programación embebida.
     \item Integración completa de hardware con software de alto nivel (Laravel), comprendiendo el flujo de datos desde el nivel físico hasta la capa de presentación web.
     \item Diseño de bases de datos relacionales y uso de ORM (Eloquent) para garantizar la integridad y trazabilidad de los registros.
@@ -766,7 +764,6 @@ A continuación se incluye el código fuente completo del sketch desarrollado pa
 #define PIN_LED_ALERTA 12
 #define PIN_PWM_ALARMA 9
 #define PIN_LDR A0
-#define PIN_POT A1
 
 // --- Constantes ---
 #define INTERVALO_MS 5000
@@ -808,11 +805,11 @@ void loop() {
 
         // Lectura de entradas
         int rawLDR = analogRead(PIN_LDR);
-        int rawPot = analogRead(PIN_POT);
         int btnState = digitalRead(PIN_BOTON);
 
+        // El potenciómetro fue removido del montaje físico.
+        // El umbral se establece únicamente por comando remoto (SET_TH).
         float luminosidad = map(rawLDR, 0, 1023, 0, 100);
-        umbralTemp = map(rawPot, 0, 1023, 150, 450) / 10.0;
 
         // Lectura de sensores
         float temperatura = dht.readTemperature();
